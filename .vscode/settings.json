@@ -1,0 +1,5 @@
+{
+  "java.project.referencedLibraries": [
+    "src/main/java/com/evora/nioflow-framework-1.0.0.jar"
+  ]
+}
