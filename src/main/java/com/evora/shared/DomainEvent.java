@@ -1,4 +1,4 @@
-package main.java.com.evora.shared;
+package com.evora.shared;
 
 import java.time.Instant;
 
