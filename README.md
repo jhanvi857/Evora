@@ -1,19 +1,19 @@
 # Evora | Event-Sourced Order Management System
 
-Evora is a high-fidelity, event-sourced Order Management System (OMS) built on the **NioFlow** micro-framework. It demonstrates advanced distributed systems patterns including **CQRS**, **Saga Orchestration**, **Event Sourcing**, and **Idempotent Command Handling** within a unified, high-performance runtime.
+Evora is a high-fidelity, event-sourced Order Management System (OMS) built on the NioFlow micro-framework. It demonstrates advanced distributed systems patterns including CQRS, Saga Orchestration, Event Sourcing, and Idempotent Command Handling within a unified, high-performance runtime.
 
-## 🚀 Key Features
+## Key Capabilities
 
-- **Event Sourcing**: Immutable ledger-based state management with full replay support.
-- **Saga Orchestration**: Complex multi-stage transaction coordination with automated compensation (Self-Healing).
-- **Premium Web Dashboard**: High-fidelity UI for real-time order tracking and lifecycle monitoring.
-- **Admin Command Center**: Global telemetry, revenue metrics, and deep-trace event analysis.
-- **Deterministic Simulation**: Built-in scenarios to test failure paths like `STOCK_OUT`, `PAYMENT_DECLINED`, and `SHIPPING_ERROR`.
-- **NioFlow Integration**: Powered by a lightweight, high-concurrency Java micro-framework.
+* **Event Sourcing**: Immutable ledger-based state management with full replay support.
+* **Saga Orchestration**: Complex multi-stage transaction coordination with automated compensation.
+* **Premium Web Dashboard**: High-fidelity interface for real-time order tracking and lifecycle monitoring.
+* **Admin Command Center**: Global telemetry, revenue metrics, and deep-trace event analysis.
+* **Deterministic Simulation**: Built-in scenarios to test failure paths like STOCK_OUT, PAYMENT_DECLINED, and SHIPPING_ERROR.
+* **NioFlow Integration**: Powered by a lightweight and high-concurrency Java micro-framework.
 
-## 🛠️ Architecture
+## Architecture
 
-Evora separates the **Write Side** (Command handling & Event Appending) from the **Read Side** (Projections & Dashboards), ensuring maximum scalability and observability.
+Evora separates the Write Side (Command handling and Event Appending) from the Read Side (Projections and Dashboards), ensuring maximum scalability and observability.
 
 ```mermaid
 flowchart LR
@@ -29,45 +29,45 @@ flowchart LR
     ReadModel --> API
 ```
 
-## 🖥️ Dashboard & Observability
+## Dashboard and Observability
 
-Evora provides two specialized portals for system management:
+Evora provides specialized portals for system management:
 
-- **Customer Portal**: Create orders and track their real-time execution via a high-fidelity event timeline.
-- **Admin Portal**: Monitor global system health, success rates, and perform "Deep Traces" into the raw JSON event stream.
+* **Customer Portal**: Create orders and track real-time execution via a high-fidelity event timeline.
+* **Admin Portal**: monitor global system health, success rates, and perform deep traces into raw JSON event streams.
 
 ### Event Tracing
-Every state transition is visible as a raw JSON log, allowing developers to see exactly how Aggregate IDs, Idempotency Keys, and Versioning work in a production-grade system.
+Every state transition is visible as a raw JSON log, allowing for inspection of Aggregate IDs, Idempotency Keys, and Versioning data as it is processed by the system.
 
-## 🚦 Getting Started
+## Getting Started
 
 ### Prerequisites
-- **Java 17** or later
-- **Maven** (for building)
+* Java 17 or later
+* Maven
 
 ### Launching the System
-We provide a unified launch script that handles compilation and starts the NioFlow server.
+The provided launch script handles compilation and starts the NioFlow server.
 
 ```powershell
 .\launch-evora.ps1
 ```
 
-Once running, access the portals at:
-- **User Dashboard**: [http://localhost:8080/index.html](http://localhost:8080/index.html)
-- **Admin Panel**: [http://localhost:8080/admin.html](http://localhost:8080/admin.html)
+Once running, the portals are accessible at:
+* **User Dashboard**: http://localhost:8080/index.html
+* **Admin Panel**: http://localhost:8080/admin.html
 
-## 🧪 Simulation Scenarios
-You can trigger deterministic failures during order creation to observe the Saga's compensation logic:
-- **STOCK_OUT**: Triggers inventory failure.
-- **PAYMENT_DECLINED**: Triggers payment failure and inventory rollback.
-- **SHIPPING_ERROR**: Triggers shipping failure, payment refund, and inventory release.
+## Simulation Scenarios
+Deterministic failures can be triggered during order creation to observe Saga compensation logic:
+* **STOCK_OUT**: Triggers inventory failure.
+* **PAYMENT_DECLINED**: Triggers payment failure and inventory rollback.
+* **SHIPPING_ERROR**: Triggers shipping failure, payment refund, and inventory release.
 
-## 📁 Project Structure
-- `com.evora.domain`: Aggregate roots and event definitions.
-- `com.evora.saga`: Orchestration logic and simulated microservices.
-- `com.evora.projection`: CQRS projection and read-model state.
-- `com.evora.api.http`: NioFlow server and REST endpoints.
-- `static/`: High-fidelity dashboard assets (CSS/JS/HTML).
+## Project Structure
+* `com.evora.domain`: Aggregate roots and event definitions.
+* `com.evora.saga`: Orchestration logic and simulated microservices.
+* `com.evora.projection`: CQRS projection and read-model state.
+* `com.evora.api.http`: NioFlow server and REST endpoints.
+* `src/main/resources/static`: Dashboard assets including CSS, JavaScript, and HTML.
 
 ---
-*Built with ❤️ for High-Performance Distributed Systems.*
+Built for High-Performance Distributed Systems.
