@@ -2,31 +2,82 @@
 
 Evora is a high-fidelity, event-sourced Order Management System (OMS) built on the NioFlow micro-framework. It demonstrates advanced distributed systems patterns including CQRS, Saga Orchestration, Event Sourcing, and Idempotent Command Handling within a unified, high-performance runtime.
 
-## Key Capabilities
+## System Architecture
 
-* **Event Sourcing**: Immutable ledger-based state management with full replay support.
-* **Saga Orchestration**: Complex multi-stage transaction coordination with automated compensation.
-* **Premium Web Dashboard**: High-fidelity interface for real-time order tracking and lifecycle monitoring.
-* **Admin Command Center**: Global telemetry, revenue metrics, and deep-trace event analysis.
-* **Deterministic Simulation**: Built-in scenarios to test failure paths like STOCK_OUT, PAYMENT_DECLINED, and SHIPPING_ERROR.
-* **NioFlow Integration**: Powered by a lightweight and high-concurrency Java micro-framework.
-
-## Architecture
-
-Evora separates the Write Side (Command handling and Event Appending) from the Read Side (Projections and Dashboards), ensuring maximum scalability and observability.
+Evora utilizes a strict separation between command processing and query projections. The following diagram illustrates the component interaction and data flow across the system.
 
 ```mermaid
-flowchart LR
-    Client[Web Browser] --> API[NioFlow Order Server]
-    API --> CS[OrderCommandService]
-    CS --> Handler[PlaceOrderCommandHandler]
-    Handler --> Appender[OrderEventAppender]
-    Appender --> Store[(Event Store JSON)]
-    Appender --> Bus[Internal Event Bus]
-    Bus --> Saga[OrderSaga]
-    Bus --> Projector[OrderProjector]
-    Projector --> ReadModel[InMemory Read Repository]
-    ReadModel --> API
+graph TD
+    subgraph Client_Tier [Client Tier]
+        UI[Web Dashboard]
+        Admin[Admin Portal]
+    end
+
+    subgraph API_Layer [API Layer / NioFlow]
+        Srv[HttpOrderServer]
+        Bridge[OrderApi]
+    end
+
+    subgraph Command_Side [Write Model / Event Sourcing]
+        Handler[PlaceOrderCommandHandler]
+        Agg[OrderAggregate]
+        Store[(Event Store JSON)]
+        Bus[Internal Event Bus]
+    end
+
+    subgraph Saga_Orchestrator [Distributed Coordination]
+        Orch[OrderSaga]
+        Inv[Inventory Service]
+        Pay[Payment Service]
+        Ship[Shipping Service]
+    end
+
+    subgraph Query_Side [Read Model / CQRS]
+        Proj[OrderProjector]
+        Repo[(In-Memory View Repository)]
+    end
+
+    UI --> Srv
+    Admin --> Srv
+    Srv --> Bridge
+    Bridge --> Handler
+    Handler --> Agg
+    Agg --> Store
+    Agg --> Bus
+    Bus --> Orch
+    Bus --> Proj
+    Orch --> Inv
+    Orch --> Pay
+    Orch --> Ship
+    Proj --> Repo
+    Repo --> Bridge
+```
+
+## Saga Execution Workflow
+
+The transaction lifecycle is coordinated via a Saga. If any stage in the happy path fails, the system executes compensation events to maintain consistency across simulated downstream services.
+
+```mermaid
+sequenceDiagram
+    participant B as Event Bus
+    participant S as OrderSaga
+    participant I as Inventory
+    participant P as Payment
+    participant H as Shipping
+    participant E as Event Store
+
+    Note over B,E: Scenario: Payment Declined
+    B->>S: OrderPlacedEvent
+    S->>I: Reserve Items
+    I-->>S: Success
+    S->>E: InventoryReservedEvent
+    S->>P: Process Payment
+    P-->>S: FAILURE (Declined)
+    S->>E: PaymentChargeFailedEvent
+    S->>I: Release Items (Compensate)
+    I-->>S: Success
+    S->>E: InventoryReleasedEvent
+    S->>E: OrderFailedEvent (Status: PAYMENT_DECLINED)
 ```
 
 ## Dashboard and Observability
@@ -34,7 +85,7 @@ flowchart LR
 Evora provides specialized portals for system management:
 
 * **Customer Portal**: Create orders and track real-time execution via a high-fidelity event timeline.
-* **Admin Portal**: monitor global system health, success rates, and perform deep traces into raw JSON event streams.
+* **Admin Portal**: Monitor global system health, success rates, and perform deep traces into raw JSON event streams.
 
 ### Event Tracing
 Every state transition is visible as a raw JSON log, allowing for inspection of Aggregate IDs, Idempotency Keys, and Versioning data as it is processed by the system.
