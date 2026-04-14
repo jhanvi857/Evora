@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evora | System Administration</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon admin">A</div>
+                <span>Evora Admin</span>
+            </div>
+            
+            <nav class="nav-links">
+                <a href="index.html" class="nav-item">
+                    <i data-lucide="layout"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="admin.html" class="nav-item active">
+                    <i data-lucide="shield"></i>
+                    <span>Admin Panel</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer" style="padding:20px 0; border-top: 1px solid var(--border);">
+                <div style="font-size:11px; color:var(--text-muted);">Root Access Granted</div>
+            </div>
+        </aside>
+
+        <!-- Main View -->
+        <main class="main-view">
+            <header class="dashboard-header">
+                <div class="header-title">
+                    <h1>System Oversight</h1>
+                    <p>Global telemetry and saga orchestration health</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary" id="btn-refresh"><i data-lucide="refresh-cw"></i> Refresh Ledger</button>
+                </div>
+            </header>
+
+            <section class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon purple"><i data-lucide="database"></i></div>
+                    <div class="metric-info">
+                        <label>Ledger Entries</label>
+                        <h2 id="metric-total-orders">0</h2>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon green"><i data-lucide="activity"></i></div>
+                    <div class="metric-info">
+                        <label>Settled Revenue</label>
+                        <h2 id="metric-revenue">$0.00</h2>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon yellow"><i data-lucide="workflow"></i></div>
+                    <div class="metric-info">
+                        <label>Saga Success</label>
+                        <h2 id="metric-success-rate">0%</h2>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section-card">
+                <div class="section-header">
+                    <h2>Global Order Stream</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Trace ID</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>State</th>
+                            <th>Timestamp</th>
+                            <th>Deep Trace</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-tbody"></tbody>
+                </table>
+            </section>
+        </main>
+
+        <aside class="drawer" id="timeline-drawer">
+            <div class="modal-header">
+                <h2>Deep Trace Analysis</h2>
+                <button id="close-drawer" class="btn-close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="drawer-meta" style="margin-bottom:20px;">
+                <p id="drawer-order-id" class="mono"></p>
+                <span id="drawer-status" class="badge"></span>
+            </div>
+            <div id="event-timeline" class="event-timeline"></div>
+        </aside>
+    </div>
+    <script src="admin-script.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

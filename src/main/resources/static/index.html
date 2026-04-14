@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evora | My Workspace</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <div class="logo-icon">E</div>
+                <span>Evora OMS</span>
+            </div>
+            
+            <nav class="nav-links">
+                <a href="index.html" class="nav-item active">
+                    <i data-lucide="layout"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="admin.html" class="nav-item">
+                    <i data-lucide="shield"></i>
+                    <span>Admin Panel</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="context-selector">
+                    <i data-lucide="user"></i>
+                    <select id="user-context">
+                        <option value="CUST-857">CUST-857</option>
+                        <option value="CUST-001">CUST-001</option>
+                        <option value="CUST-999">CUST-999</option>
+                    </select>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main View -->
+        <main class="main-view">
+            <header class="dashboard-header">
+                <div class="header-title">
+                    <h1 id="view-title">My Orders</h1>
+                    <p>Track your real-time event lifecycle</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary" id="btn-new-order">
+                        <i data-lucide="plus"></i> New Order
+                    </button>
+                </div>
+            </header>
+
+            <section class="section-card">
+                <div class="section-header">
+                    <h2>Live Activity Stream</h2>
+                    <button class="btn-icon" id="btn-refresh"><i data-lucide="rotate-cw"></i></button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Items</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Timestamp</th>
+                            <th>Track</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-tbody">
+                        <!-- Dynamic Rows -->
+                    </tbody>
+                </table>
+            </section>
+        </main>
+
+        <!-- Modals & Drawers -->
+        <div class="modal-overlay" id="order-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Place New Order</h2>
+                    <button class="btn-close" id="close-modal"><i data-lucide="x"></i></button>
+                </div>
+                <form id="place-order-form">
+                    <div class="form-group">
+                        <label>Demo Scenario</label>
+                        <select id="order-scenario">
+                            <option value="happy">Normal Success</option>
+                            <option value="inventory-fail">Simulate Stock Out</option>
+                            <option value="payment-fail">Simulate Payment Decline</option>
+                            <option value="shipping-fail">Simulate Shipping Failure</option>
+                        </select>
+                    </div>
+                    <div class="items-section">
+                        <label style="font-size:14px; font-weight:600; color:var(--text-muted); margin-bottom:10px; display:block;">Order Items</label>
+                        <div id="dynamic-items-list" class="items-dynamic-list"></div>
+                        <button type="button" id="btn-add-item" style="background:none; border:none; color:var(--accent-purple); font-weight:700; cursor:pointer; margin-top:10px;">+ Add Another SKU</button>
+                    </div>
+                    <div style="margin: 25px 0; padding: 20px; background: rgba(255,255,255,0.03); border-radius:15px; display:flex; justify-content:space-between;">
+                        <span style="font-weight:700;">Total Payable:</span>
+                        <span id="modal-total-price" style="font-weight:800; color:var(--accent-green);">$0.00</span>
+                    </div>
+                    <button type="submit" class="btn-submit" id="submit-order">Confirm & Execute</button>
+                    <input type="hidden" id="order-id">
+                </form>
+            </div>
+        </div>
+
+        <aside class="drawer" id="timeline-drawer">
+            <div class="modal-header">
+                <h2>Order Trace</h2>
+                <button id="close-drawer" class="btn-close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="drawer-meta" style="margin-bottom:20px;">
+                <p id="drawer-order-id" class="mono"></p>
+                <span id="drawer-status" class="badge"></span>
+            </div>
+            <div id="event-timeline" class="event-timeline"></div>
+        </aside>
+    </div>
+    <script src="script.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
