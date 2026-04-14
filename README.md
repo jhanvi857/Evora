@@ -97,10 +97,17 @@ Every state transition is visible as a raw JSON log, allowing for inspection of 
 * Maven
 
 ### Launching the System
-The provided launch script handles compilation and starts the NioFlow server.
+The provided launch scripts handle compilation and start the NioFlow server automatically.
 
+**Windows (PowerShell):**
 ```powershell
 .\launch-evora.ps1
+```
+
+**Linux / macOS (Bash):**
+```bash
+chmod +x launch-evora.sh
+./launch-evora.sh
 ```
 
 Once running, the portals are accessible at:
