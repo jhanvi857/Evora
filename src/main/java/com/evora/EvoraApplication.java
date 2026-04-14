@@ -2,10 +2,12 @@ package com.evora;
 
 import com.evora.api.OrderApi;
 import com.evora.api.PlaceOrderApiRequest;
+import com.evora.api.http.HttpOrderServer;
 import com.evora.application.EvoraRuntime;
 import com.evora.application.EvoraRuntimeConfig;
 import com.evora.domain.order.OrderItem;
 
+// import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,38 +16,45 @@ import java.util.UUID;
 
 public class EvoraApplication {
     public static void main(String[] args) {
+        EvoraRuntimeConfig config = resolveConfig(scenarioName(args));
+        EvoraRuntime runtime = EvoraRuntime.create(config);
+        OrderApi orderApi = new OrderApi(runtime.commandService(), runtime.queryService(), runtime.timelineService());
+
+        try {
+            HttpOrderServer server = new HttpOrderServer(8080, orderApi, runtime);
+            new Thread(server::start).start();
+        } catch (Exception e) {
+            System.err.println("Failed to start dashboard server: " + e.getMessage());
+        }
+
+        System.out.println("--- Evora CQRS CLI Mode ---");
+        System.out.println("You can also enter orders manually here, or use the Dashboard.");
+
         try (Scanner scanner = new Scanner(System.in)) {
-            String scenario = readScenario(scanner, args);
-            EvoraRuntimeConfig config = resolveConfig(scenario);
-            EvoraRuntime runtime = EvoraRuntime.create(config);
-            OrderApi orderApi = new OrderApi(runtime.commandService(), runtime.queryService(), runtime.timelineService());
+            while (true) {
+                System.out.println("\nOptions: [1] Manual Order, [2] Exit");
+                String choice = scanner.nextLine();
+                if ("2".equals(choice))
+                    break;
+                if (!"1".equals(choice))
+                    continue;
 
-            String orderId = readText(scanner, "Order ID", "order-" + UUID.randomUUID());
-            String customerId = readText(scanner, "Customer ID", "customer-123");
-            String idempotencyKey = readText(scanner, "Idempotency Key", "idem-" + UUID.randomUUID());
-            List<OrderItem> items = readOrderItems(scanner);
+                String orderId = readText(scanner, "Order ID", "order-" + UUID.randomUUID());
+                String customerId = readText(scanner, "Customer ID", "customer-123");
+                String idempotencyKey = readText(scanner, "Idempotency Key", "idem-" + UUID.randomUUID());
+                List<OrderItem> items = readOrderItems(scanner);
 
-            PlaceOrderApiRequest request = new PlaceOrderApiRequest(
-                    orderId,
-                    customerId,
-                    items,
-                    idempotencyKey
-            );
+                PlaceOrderApiRequest request = new PlaceOrderApiRequest(
+                        orderId,
+                        customerId,
+                        items,
+                        idempotencyKey);
 
-            orderApi.placeOrder(request);
-            orderApi.placeOrder(request);
+                orderApi.placeOrder(request);
 
-            System.out.println("Scenario: " + scenario);
-            System.out.println("Timeline for " + orderId + ":");
-            orderApi.getOrderTimeline(orderId).forEach(event -> System.out.println("- " + event));
-
-            orderApi.getOrder(orderId)
-                    .ifPresent(view -> {
-                        System.out.println("\nRead model snapshot:");
-                        System.out.println(view);
-                    });
-
-            System.out.println("\nTotal orders in read model: " + orderApi.listOrders().size());
+                System.out.println("Timeline for " + orderId + ":");
+                orderApi.getOrderTimeline(orderId).forEach(event -> System.out.println("- " + event));
+            }
         }
     }
 
@@ -64,16 +73,6 @@ public class EvoraApplication {
             return "mixed";
         }
         return args[0].trim().toLowerCase();
-    }
-
-    private static String readScenario(Scanner scanner, String[] args) {
-        String defaultScenario = scenarioName(args);
-        System.out.printf("Scenario (happy|inventory-fail|payment-fail|shipping-fail|mixed) [%s]: ", defaultScenario);
-        String input = scanner.nextLine();
-        if (input == null || input.isBlank()) {
-            return defaultScenario;
-        }
-        return input.trim().toLowerCase();
     }
 
     private static String readText(Scanner scanner, String label, String defaultValue) {

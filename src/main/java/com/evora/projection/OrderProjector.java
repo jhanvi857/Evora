@@ -27,51 +27,59 @@ public class OrderProjector implements DomainEventSubscriber {
                     placed.totalAmount(),
                     OrderStatus.PLACED,
                     null,
-                    placed.occurredAt()
-            ));
+                    placed.occurredAt()));
             return;
         }
 
         if (event instanceof OrderConfirmedEvent confirmed) {
-            repository.findByOrderId(confirmed.aggregateId()).ifPresent(existing ->
-                    repository.save(new OrderView(
-                            existing.orderId(),
-                            existing.customerId(),
-                            existing.items(),
-                            existing.totalAmount(),
-                            OrderStatus.CONFIRMED,
-                            null,
-                            confirmed.occurredAt()
-                    ))
-            );
+            repository.findByOrderId(confirmed.aggregateId()).ifPresent(existing -> repository.save(new OrderView(
+                    existing.orderId(),
+                    existing.customerId(),
+                    existing.items(),
+                    existing.totalAmount(),
+                    OrderStatus.CONFIRMED,
+                    null,
+                    confirmed.occurredAt())));
+            return;
+        }
+
+        if (event instanceof com.evora.event.InventoryReservationFailedEvent failed) {
+            updateStatus(failed.aggregateId(), "STOCK_OUT", failed.reason(), failed.occurredAt());
+            return;
+        }
+
+        if (event instanceof com.evora.event.PaymentChargeFailedEvent failed) {
+            updateStatus(failed.aggregateId(), "PAYMENT_DECLINED", failed.reason(), failed.occurredAt());
+            return;
+        }
+
+        if (event instanceof com.evora.event.ShipmentCreationFailedEvent failed) {
+            updateStatus(failed.aggregateId(), "SHIPPING_ERROR", failed.reason(), failed.occurredAt());
             return;
         }
 
         if (event instanceof OrderFailedEvent failed) {
-            repository.findByOrderId(failed.aggregateId()).ifPresent(existing ->
-                    repository.save(new OrderView(
-                            existing.orderId(),
-                            existing.customerId(),
-                            existing.items(),
-                            existing.totalAmount(),
-                            OrderStatus.FAILED,
-                            failed.reason(),
-                            failed.occurredAt()
-                    ))
-            );
+            String reason = failed.reason().toUpperCase().replace(" ", "_");
+            if (reason.contains("INVENTORY"))
+                reason = "STOCK_OUT";
+            if (reason.contains("PAYMENT"))
+                reason = "PAYMENT_DECLINED";
+            if (reason.contains("SHIPPING"))
+                reason = "SHIPPING_ERROR";
+
+            updateStatus(failed.aggregateId(), reason, failed.reason(), failed.occurredAt());
             return;
         }
+    }
 
-        repository.findByOrderId(event.aggregateId()).ifPresent(existing ->
-                repository.save(new OrderView(
-                        existing.orderId(),
-                        existing.customerId(),
-                        existing.items(),
-                        existing.totalAmount(),
-                        existing.status(),
-                        existing.failureReason(),
-                        Instant.now()
-                ))
-        );
+    private void updateStatus(String orderId, String status, String reason, Instant occurredAt) {
+        repository.findByOrderId(orderId).ifPresent(existing -> repository.save(new OrderView(
+                existing.orderId(),
+                existing.customerId(),
+                existing.items(),
+                existing.totalAmount(),
+                OrderStatus.FAILED,
+                status,
+                occurredAt)));
     }
 }

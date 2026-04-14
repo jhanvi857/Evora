@@ -18,10 +18,13 @@ public class SimulatedShippingService implements ShippingService {
     @Override
     public synchronized ServiceResult createShipment(String orderId, String idempotencyKey) {
         return responsesByKey.computeIfAbsent(idempotencyKey, key -> {
-            if (random.nextDouble() < failureRate) {
-                return ServiceResult.failure("Shipment provider unavailable");
+            if (key.contains(":scenario:shipping-fail")) {
+                return ServiceResult.failure("[DEMO] Shipping restricted to this area");
             }
-            return ServiceResult.success("ship-" + UUID.randomUUID());
+            if (random.nextDouble() < failureRate) {
+                return ServiceResult.failure("Shipping failed");
+            }
+            return ServiceResult.success("ship-cre-" + UUID.randomUUID());
         });
     }
 }

@@ -19,6 +19,9 @@ public class SimulatedPaymentService implements PaymentService {
     @Override
     public synchronized ServiceResult charge(String orderId, BigDecimal amount, String idempotencyKey) {
         return responsesByKey.computeIfAbsent(idempotencyKey, key -> {
+            if (key.contains(":scenario:payment-fail")) {
+                return ServiceResult.failure("[DEMO] Payment declined");
+            }
             if (random.nextDouble() < failureRate) {
                 return ServiceResult.failure("Payment authorization failed");
             }

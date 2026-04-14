@@ -64,7 +64,7 @@ public class OrderSaga implements DomainEventSubscriber {
                         placed.aggregateId(), ++nextVersion, now, reserve.error(), placed.idempotencyKey()
                 ));
                 events.add(new OrderFailedEvent(
-                        placed.aggregateId(), ++nextVersion, now, "Inventory reservation failed", placed.idempotencyKey()
+                        placed.aggregateId(), ++nextVersion, now, "STOCK_OUT", placed.idempotencyKey()
                 ));
                 return events;
             }
@@ -90,7 +90,7 @@ public class OrderSaga implements DomainEventSubscriber {
                         placed.aggregateId(), ++nextVersion, now, release.referenceId(), placed.idempotencyKey()
                 ));
                 events.add(new OrderFailedEvent(
-                        placed.aggregateId(), ++nextVersion, now, "Payment failed after inventory reservation", placed.idempotencyKey()
+                        placed.aggregateId(), ++nextVersion, now, "PAYMENT_DECLINED", placed.idempotencyKey()
                 ));
                 return events;
             }
@@ -123,7 +123,7 @@ public class OrderSaga implements DomainEventSubscriber {
                         placed.aggregateId(), ++nextVersion, now, release.referenceId(), placed.idempotencyKey()
                 ));
                 events.add(new OrderFailedEvent(
-                        placed.aggregateId(), ++nextVersion, now, "Shipment creation failed", placed.idempotencyKey()
+                        placed.aggregateId(), ++nextVersion, now, "SHIPPING_ERROR", placed.idempotencyKey()
                 ));
                 return events;
             }

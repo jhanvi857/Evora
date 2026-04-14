@@ -21,8 +21,11 @@ public class SimulatedInventoryService implements InventoryService {
     @Override
     public synchronized ServiceResult reserve(String orderId, List<OrderItem> items, String idempotencyKey) {
         return responsesByKey.computeIfAbsent(idempotencyKey, key -> {
+            if (key.contains(":scenario:inventory-fail")) {
+                return ServiceResult.failure("[DEMO] Inventory not available");
+            }
             if (random.nextDouble() < failureRate) {
-                return ServiceResult.failure("Inventory not available");
+                return ServiceResult.failure("Random Inventory not available");
             }
             return ServiceResult.success("inv-res-" + UUID.randomUUID());
         });
