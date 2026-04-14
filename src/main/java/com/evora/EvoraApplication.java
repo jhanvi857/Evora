@@ -7,45 +7,49 @@ import com.evora.application.EvoraRuntimeConfig;
 import com.evora.domain.order.OrderItem;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.UUID;
 
 public class EvoraApplication {
     public static void main(String[] args) {
-    EvoraRuntimeConfig config = resolveConfig(args);
-    EvoraRuntime runtime = EvoraRuntime.create(config);
-    OrderApi orderApi = new OrderApi(runtime.commandService(), runtime.queryService(), runtime.timelineService());
+        try (Scanner scanner = new Scanner(System.in)) {
+            String scenario = readScenario(scanner, args);
+            EvoraRuntimeConfig config = resolveConfig(scenario);
+            EvoraRuntime runtime = EvoraRuntime.create(config);
+            OrderApi orderApi = new OrderApi(runtime.commandService(), runtime.queryService(), runtime.timelineService());
 
-        String orderId = "order-" + UUID.randomUUID();
-        String idempotencyKey = "idem-" + UUID.randomUUID();
-    PlaceOrderApiRequest request = new PlaceOrderApiRequest(
-                orderId,
-                "customer-123",
-                List.of(
-                        new OrderItem("sku-apple", 2, new BigDecimal("120.50")),
-                        new OrderItem("sku-banana", 1, new BigDecimal("75.00"))
-                ),
-                idempotencyKey
-        );
+            String orderId = readText(scanner, "Order ID", "order-" + UUID.randomUUID());
+            String customerId = readText(scanner, "Customer ID", "customer-123");
+            String idempotencyKey = readText(scanner, "Idempotency Key", "idem-" + UUID.randomUUID());
+            List<OrderItem> items = readOrderItems(scanner);
 
-        orderApi.placeOrder(request);
-        orderApi.placeOrder(request);
+            PlaceOrderApiRequest request = new PlaceOrderApiRequest(
+                    orderId,
+                    customerId,
+                    items,
+                    idempotencyKey
+            );
 
-        System.out.println("Scenario: " + scenarioName(args));
-        System.out.println("Timeline for " + orderId + ":");
-        orderApi.getOrderTimeline(orderId).forEach(event -> System.out.println("- " + event));
+            orderApi.placeOrder(request);
+            orderApi.placeOrder(request);
 
-        orderApi.getOrder(orderId)
-                .ifPresent(view -> {
-                    System.out.println("\nRead model snapshot:");
-                    System.out.println(view);
-                });
+            System.out.println("Scenario: " + scenario);
+            System.out.println("Timeline for " + orderId + ":");
+            orderApi.getOrderTimeline(orderId).forEach(event -> System.out.println("- " + event));
 
-        System.out.println("\nTotal orders in read model: " + orderApi.listOrders().size());
+            orderApi.getOrder(orderId)
+                    .ifPresent(view -> {
+                        System.out.println("\nRead model snapshot:");
+                        System.out.println(view);
+                    });
+
+            System.out.println("\nTotal orders in read model: " + orderApi.listOrders().size());
+        }
     }
 
-    private static EvoraRuntimeConfig resolveConfig(String[] args) {
-        String scenario = scenarioName(args);
+    private static EvoraRuntimeConfig resolveConfig(String scenario) {
         return switch (scenario) {
             case "happy" -> EvoraRuntimeConfig.happyPath();
             case "inventory-fail" -> EvoraRuntimeConfig.inventoryFailure();
@@ -60,5 +64,77 @@ public class EvoraApplication {
             return "mixed";
         }
         return args[0].trim().toLowerCase();
+    }
+
+    private static String readScenario(Scanner scanner, String[] args) {
+        String defaultScenario = scenarioName(args);
+        System.out.printf("Scenario (happy|inventory-fail|payment-fail|shipping-fail|mixed) [%s]: ", defaultScenario);
+        String input = scanner.nextLine();
+        if (input == null || input.isBlank()) {
+            return defaultScenario;
+        }
+        return input.trim().toLowerCase();
+    }
+
+    private static String readText(Scanner scanner, String label, String defaultValue) {
+        while (true) {
+            System.out.printf("%s [%s]: ", label, defaultValue);
+            String input = scanner.nextLine();
+            if (input == null || input.isBlank()) {
+                return defaultValue;
+            }
+            String value = input.trim();
+            if (!value.isEmpty()) {
+                return value;
+            }
+        }
+    }
+
+    private static List<OrderItem> readOrderItems(Scanner scanner) {
+        int count = readPositiveInt(scanner, "Number of items", 2);
+        List<OrderItem> items = new ArrayList<>();
+        for (int i = 1; i <= count; i++) {
+            String sku = readText(scanner, "Item " + i + " SKU", "sku-item-" + i);
+            int quantity = readPositiveInt(scanner, "Item " + i + " quantity", 1);
+            BigDecimal unitPrice = readPositiveDecimal(scanner, "Item " + i + " unit price", "100.00");
+            items.add(new OrderItem(sku, quantity, unitPrice));
+        }
+        return items;
+    }
+
+    private static int readPositiveInt(Scanner scanner, String label, int defaultValue) {
+        while (true) {
+            System.out.printf("%s [%d]: ", label, defaultValue);
+            String input = scanner.nextLine();
+            if (input == null || input.isBlank()) {
+                return defaultValue;
+            }
+            try {
+                int value = Integer.parseInt(input.trim());
+                if (value > 0) {
+                    return value;
+                }
+            } catch (NumberFormatException ignored) {
+                // continue prompting
+            }
+            System.out.println("Please enter a positive integer.");
+        }
+    }
+
+    private static BigDecimal readPositiveDecimal(Scanner scanner, String label, String defaultValue) {
+        while (true) {
+            System.out.printf("%s [%s]: ", label, defaultValue);
+            String input = scanner.nextLine();
+            String candidate = (input == null || input.isBlank()) ? defaultValue : input.trim();
+            try {
+                BigDecimal value = new BigDecimal(candidate);
+                if (value.compareTo(BigDecimal.ZERO) > 0) {
+                    return value;
+                }
+            } catch (NumberFormatException ignored) {
+                // continue prompting
+            }
+            System.out.println("Please enter a positive decimal value.");
+        }
     }
 }
