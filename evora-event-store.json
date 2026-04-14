@@ -1,0 +1,78 @@
+{
+    "ORD-6OX6BAZ2W": [
+        {
+            "aggregateId": "ORD-6OX6BAZ2W",
+            "version": 1,
+            "occurredAt": 1776162313.357280500,
+            "customerId": "CUST-857",
+            "items": [
+                {
+                    "sku": "banana",
+                    "quantity": 10,
+                    "unitPrice": 10
+                }
+            ],
+            "totalAmount": 100,
+            "idempotencyKey": "IDEM-1776162313346:scenario:inventory-fail"
+        },
+        {
+            "aggregateId": "ORD-6OX6BAZ2W",
+            "version": 2,
+            "occurredAt": 1776162313.358290400,
+            "reason": "[DEMO] Inventory not available",
+            "idempotencyKey": "IDEM-1776162313346:scenario:inventory-fail"
+        },
+        {
+            "aggregateId": "ORD-6OX6BAZ2W",
+            "version": 3,
+            "occurredAt": 1776162313.358290400,
+            "reason": "STOCK_OUT",
+            "idempotencyKey": "IDEM-1776162313346:scenario:inventory-fail"
+        }
+    ],
+    "ORD-GYW01XCIB": [
+        {
+            "aggregateId": "ORD-GYW01XCIB",
+            "version": 1,
+            "occurredAt": 1776162282.725250500,
+            "customerId": "CUST-857",
+            "items": [
+                {
+                    "sku": "Apple",
+                    "quantity": 2,
+                    "unitPrice": 19.99
+                }
+            ],
+            "totalAmount": 39.98,
+            "idempotencyKey": "IDEM-1776162282520:scenario:happy"
+        },
+        {
+            "aggregateId": "ORD-GYW01XCIB",
+            "version": 2,
+            "occurredAt": 1776162282.856547400,
+            "reservationId": "inv-res-e36f5042-11b2-4989-9b07-cc5cd7772207",
+            "idempotencyKey": "IDEM-1776162282520:scenario:happy"
+        },
+        {
+            "aggregateId": "ORD-GYW01XCIB",
+            "version": 3,
+            "occurredAt": 1776162282.856547400,
+            "paymentId": "pay-28397d72-da84-42f0-b66c-2ee7243e34b3",
+            "amount": 39.98,
+            "idempotencyKey": "IDEM-1776162282520:scenario:happy"
+        },
+        {
+            "aggregateId": "ORD-GYW01XCIB",
+            "version": 4,
+            "occurredAt": 1776162282.856547400,
+            "shipmentId": "ship-cre-45ca79c9-d6f6-4459-83a0-5189dcf32bc3",
+            "idempotencyKey": "IDEM-1776162282520:scenario:happy"
+        },
+        {
+            "aggregateId": "ORD-GYW01XCIB",
+            "version": 5,
+            "occurredAt": 1776162282.856547400,
+            "idempotencyKey": "IDEM-1776162282520:scenario:happy"
+        }
+    ]
+}
