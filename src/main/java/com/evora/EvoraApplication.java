@@ -18,6 +18,7 @@ public class EvoraApplication {
     public static void main(String[] args) {
         EvoraRuntimeConfig config = resolveConfig(scenarioName(args));
         EvoraRuntime runtime = EvoraRuntime.create(config);
+        Runtime.getRuntime().addShutdownHook(new Thread(runtime::shutdown));
         OrderApi orderApi = new OrderApi(runtime.commandService(), runtime.queryService(), runtime.timelineService());
 
         try {

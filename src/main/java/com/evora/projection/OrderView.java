@@ -13,7 +13,9 @@ public record OrderView(
         List<OrderItem> items,
         BigDecimal totalAmount,
         OrderStatus status,
+        String sagaStep,
         String failureReason,
-        Instant updatedAt
+        Instant updatedAt,
+        List<OrderTimelineEntry> timeline
 ) {
 }

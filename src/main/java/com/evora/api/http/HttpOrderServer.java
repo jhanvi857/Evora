@@ -16,11 +16,13 @@ import java.util.Map;
 public class HttpOrderServer {
     private final int port;
     private final OrderApi orderApi;
+    private final EvoraRuntime runtime;
     private final ObjectMapper objectMapper;
 
     public HttpOrderServer(int port, OrderApi defaultApi, EvoraRuntime defaultRuntime) {
         this.port = port;
         this.orderApi = defaultApi;
+        this.runtime = defaultRuntime;
         this.objectMapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -61,6 +63,21 @@ public class HttpOrderServer {
             } catch (Exception e) {
                 e.printStackTrace();
                 ctx.status(400).json(Map.of("error", "Bad Request", "details", e.getMessage()));
+            }
+        });
+
+        app.post("/admin/replay", ctx -> {
+            try {
+                int eventsReplayed = runtime.replayService().replayAll();
+                ctx.status(200).json(Map.of(
+                        "status", "ok",
+                        "eventsReplayed", eventsReplayed
+                ));
+            } catch (Exception replayFailure) {
+                ctx.status(500).json(Map.of(
+                        "status", "error",
+                        "message", replayFailure.getMessage()
+                ));
             }
         });
 
