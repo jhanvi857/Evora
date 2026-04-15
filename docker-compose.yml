@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: evora-postgres
+    environment:
+      POSTGRES_DB: evora
+      POSTGRES_USER: evora
+      POSTGRES_PASSWORD: evora
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evora -d evora"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - evora-postgres-data:/var/lib/postgresql/data
+
+  mongo:
+    image: mongo:7
+    container_name: evora-mongo
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - evora-mongo-data:/data/db
+
+volumes:
+  evora-postgres-data:
+  evora-mongo-data:
