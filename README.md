@@ -4,7 +4,7 @@ Evora is a high-fidelity, event-sourced Order Management System (OMS) built on t
 
 ## System Architecture
 
-Evora utilizes a strict separation between command processing and query projections. The following diagram illustrates the component interaction and data flow across the system.
+Evora utilizes a strict separation between command processing and query projections. The following diagram illustrates the component interaction and data flow across the system, utilizing a Polyglot Persistence strategy to optimize for both write integrity and read performance.
 
 ```mermaid
 graph TD
@@ -21,7 +21,7 @@ graph TD
     subgraph Command_Side [Write Model / Event Sourcing]
         Handler[PlaceOrderCommandHandler]
         Agg[OrderAggregate]
-        Store[(Event Store JSON)]
+        Store[(PostgreSQL Event Store)]
         Bus[Internal Event Bus]
     end
 
@@ -34,7 +34,7 @@ graph TD
 
     subgraph Query_Side [Read Model / CQRS]
         Proj[OrderProjector]
-        Repo[(In-Memory View Repository)]
+        Repo[(MongoDB Read Model)]
     end
 
     UI --> Srv
@@ -64,7 +64,7 @@ sequenceDiagram
     participant I as Inventory
     participant P as Payment
     participant H as Shipping
-    participant E as Event Store
+    participant E as Event Store (PostgreSQL)
 
     Note over B,E: Scenario: Payment Declined
     B->>S: OrderPlacedEvent
@@ -79,6 +79,13 @@ sequenceDiagram
     S->>E: InventoryReleasedEvent
     S->>E: OrderFailedEvent (Status: PAYMENT_DECLINED)
 ```
+
+## Polyglot Persistence Strategy
+
+The system utilizes specialized storage engines for different operational requirements:
+
+* **PostgreSQL (Write-Side)**: Used as the primary Event Store. It provides ACID compliance and transactional outbox support to ensure that domain events and state transitions are recorded with absolute integrity.
+* **MongoDB (Read-Side)**: Used for the CQRS Read Model. It stores denormalized order views as documents, allowing for high-performance, complex queries required by the dashboards without imposing load on the transactional engine.
 
 ## Dashboard and Observability
 
@@ -95,6 +102,14 @@ Every state transition is visible as a raw JSON log, allowing for inspection of 
 ### Prerequisites
 * Java 17 or later
 * Maven
+* Docker Desktop (required for PostgreSQL and MongoDB infrastructure)
+
+### Infrastructure Setup
+Launch the persistent storage layer using the provided Docker configuration:
+
+```bash
+docker-compose up -d
+```
 
 ### Launching the System
 The provided launch scripts handle compilation and start the NioFlow server automatically.
@@ -116,6 +131,7 @@ Once running, the portals are accessible at:
 
 ## Simulation Scenarios
 Deterministic failures can be triggered during order creation to observe Saga compensation logic:
+
 * **STOCK_OUT**: Triggers inventory failure.
 * **PAYMENT_DECLINED**: Triggers payment failure and inventory rollback.
 * **SHIPPING_ERROR**: Triggers shipping failure, payment refund, and inventory release.
@@ -123,7 +139,8 @@ Deterministic failures can be triggered during order creation to observe Saga co
 ## Project Structure
 * `com.evora.domain`: Aggregate roots and event definitions.
 * `com.evora.saga`: Orchestration logic and simulated microservices.
-* `com.evora.projection`: CQRS projection and read-model state.
+* `com.evora.projection`: CQRS projection and MongoDB read-model repository.
+* `com.evora.store`: PostgreSQL event store implementation and JSON serialization.
 * `com.evora.api.http`: NioFlow server and REST endpoints.
 * `src/main/resources/static`: Dashboard assets including CSS, JavaScript, and HTML.
 
