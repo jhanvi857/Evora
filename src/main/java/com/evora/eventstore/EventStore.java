@@ -8,4 +8,5 @@ public interface EventStore {
     List<DomainEvent> load(String aggregateId);
 
     void append(String aggregateId, int expectedVersion, List<DomainEvent> newEvents);
+    List<DomainEvent> loadAllEvents();
 }

@@ -49,8 +49,10 @@ public class OrderApi {
                 view.items(),
                 view.totalAmount(),
                 view.status(),
+                view.sagaStep(),
                 view.failureReason(),
-                view.updatedAt()
+                view.updatedAt(),
+                view.timeline()
         );
     }
 }

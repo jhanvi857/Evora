@@ -2,6 +2,7 @@ package com.evora.api;
 
 import com.evora.domain.order.OrderStatus;
 import com.evora.domain.order.OrderItem;
+import com.evora.projection.OrderTimelineEntry;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,7 +14,9 @@ public record OrderApiResponse(
         List<OrderItem> items,
         BigDecimal totalAmount,
         OrderStatus status,
+        String sagaStep,
         String failureReason,
-        Instant updatedAt
+        Instant updatedAt,
+        List<OrderTimelineEntry> timeline
 ) {
 }
