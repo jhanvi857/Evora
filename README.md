@@ -1,16 +1,16 @@
-# Evora | Event-Sourced Order Management System
+# Evora | Distributed Event-Sourced Job Queue
 
-Evora is a high-fidelity, event-sourced Order Management System (OMS) built on the NioFlow micro-framework. It demonstrates advanced distributed systems patterns including CQRS, Saga Orchestration, Event Sourcing, and Idempotent Command Handling within a unified, high-performance runtime.
+Evora is a high-fidelity, distributed Job Queue system built on the NioFlow micro-framework. It demonstrates advanced distributed systems patterns including CQRS, Saga Orchestration, Event Sourcing, and Idempotent Command Handling within a unified, high-performance runtime.
 
 ## System Architecture
 
-Evora utilizes a strict separation between command processing and query projections. The following diagram illustrates the component interaction and data flow across the system, utilizing a Polyglot Persistence strategy to optimize for both write integrity and read performance.
+Evora utilizes a strict separation between job submission (commands) and job status tracking (query projections). The following diagram illustrates the component interaction and data flow across the system, utilizing a Polyglot Persistence strategy to optimize for both write integrity and read performance.
 
 ```mermaid
 graph TD
     subgraph Client_Tier [Client Tier]
-        UI[Web Dashboard]
-        Admin[Admin Portal]
+        UI[Job Dashboard]
+        Admin[Telemetry Portal]
     end
 
     subgraph API_Layer [API Layer / NioFlow]
@@ -19,21 +19,21 @@ graph TD
     end
 
     subgraph Command_Side [Write Model / Event Sourcing]
-        Handler[PlaceOrderCommandHandler]
-        Agg[OrderAggregate]
+        Handler[SubmitJobCommandHandler]
+        Agg[JobAggregate]
         Store[(PostgreSQL Event Store)]
         Bus[Internal Event Bus]
     end
 
     subgraph Saga_Orchestrator [Distributed Coordination]
-        Orch[OrderSaga]
-        Inv[Inventory Service]
-        Pay[Payment Service]
-        Ship[Shipping Service]
+        Orch[JobExecutionSaga]
+        Val[Validation Worker]
+        Exec[Execution Worker]
+        Notif[Notification Worker]
     end
 
     subgraph Query_Side [Read Model / CQRS]
-        Proj[OrderProjector]
+        Proj[JobProjector]
         Repo[(MongoDB Read Model)]
     end
 
@@ -46,53 +46,53 @@ graph TD
     Agg --> Bus
     Bus --> Orch
     Bus --> Proj
-    Orch --> Inv
-    Orch --> Pay
-    Orch --> Ship
+    Orch --> Val
+    Orch --> Exec
+    Orch --> Notif
     Proj --> Repo
     Repo --> Bridge
 ```
 
 ## Saga Execution Workflow
 
-The transaction lifecycle is coordinated via a Saga. If any stage in the happy path fails, the system executes compensation events to maintain consistency across simulated downstream services.
+The job execution lifecycle is coordinated via a Saga. If any worker stage in the happy path fails, the system executes compensation logic to maintain consistency across distributed resources.
 
 ```mermaid
 sequenceDiagram
     participant B as Event Bus
-    participant S as OrderSaga
-    participant I as Inventory
-    participant P as Payment
-    participant H as Shipping
+    participant S as JobExecutionSaga
+    participant V as ValidationWorker
+    participant X as ExecutionWorker
+    participant N as NotificationWorker
     participant E as Event Store (PostgreSQL)
 
-    Note over B,E: Scenario: Payment Declined
-    B->>S: OrderPlacedEvent
-    S->>I: Reserve Items
-    I-->>S: Success
-    S->>E: InventoryReservedEvent
-    S->>P: Process Payment
-    P-->>S: FAILURE (Declined)
-    S->>E: PaymentChargeFailedEvent
-    S->>I: Release Items (Compensate)
-    I-->>S: Success
-    S->>E: InventoryReleasedEvent
-    S->>E: OrderFailedEvent (Status: PAYMENT_DECLINED)
+    Note over B,E: Scenario: Execution Failed
+    B->>S: JobSubmittedEvent
+    S->>V: Validate Job
+    V-->>S: Success
+    S->>E: ValidationPassedEvent
+    S->>X: Execute Payload
+    X-->>S: FAILURE (Runtime Error)
+    S->>E: ExecutionFailedEvent
+    S->>V: Release Reserved Resources (Compensate)
+    V-->>S: Success
+    S->>E: ValidationResourcesReleasedEvent
+    S->>E: JobFailedEvent (Status: EXECUTION_FAILED)
 ```
 
 ## Polyglot Persistence Strategy
 
 The system utilizes specialized storage engines for different operational requirements:
 
-* **PostgreSQL (Write-Side)**: Used as the primary Event Store. It provides ACID compliance and transactional outbox support to ensure that domain events and state transitions are recorded with absolute integrity.
-* **MongoDB (Read-Side)**: Used for the CQRS Read Model. It stores denormalized order views as documents, allowing for high-performance, complex queries required by the dashboards without imposing load on the transactional engine.
+* **PostgreSQL (Write-Side)**: Used as the primary Event Store. It provides ACID compliance and transactional consistency to ensure that job lifecycle events are recorded with absolute integrity.
+* **MongoDB (Read-Side)**: Used for the CQRS Read Model. It stores denormalized job views as documents, allowing for high-performance, complex queries and status filtering without imposing load on the transactional engine.
 
 ## Dashboard and Observability
 
-Evora provides specialized portals for system management:
+Evora provides specialized portals for job management:
 
-* **Customer Portal**: Create orders and track real-time execution via a high-fidelity event timeline.
-* **Admin Portal**: Monitor global system health, success rates, and perform deep traces into raw JSON event streams.
+* **User Dashboard**: Submit jobs and track real-time execution via a high-fidelity event timeline.
+* **Admin Panel**: Monitor global throughput, failure rates, and perform deep traces into raw JSON event streams.
 
 ### Event Tracing
 Every state transition is visible as a raw JSON log, allowing for inspection of Aggregate IDs, Idempotency Keys, and Versioning data as it is processed by the system.
@@ -130,17 +130,17 @@ Once running, the portals are accessible at:
 * **Admin Panel**: http://localhost:8080/admin.html
 
 ## Simulation Scenarios
-Deterministic failures can be triggered during order creation to observe Saga compensation logic:
+Deterministic failures can be triggered during job submission to observe Saga compensation logic:
 
-* **STOCK_OUT**: Triggers inventory failure.
-* **PAYMENT_DECLINED**: Triggers payment failure and inventory rollback.
-* **SHIPPING_ERROR**: Triggers shipping failure, payment refund, and inventory release.
+* **VALIDATION_FAILED**: Triggers validation worker failure.
+* **EXECUTION_FAILED**: Triggers execution worker failure and validation rollback.
+* **NOTIFICATION_FAILED**: Triggers notification worker failure, execution rollback, and validation release.
 
 ## Project Structure
-* `com.evora.domain`: Aggregate roots and event definitions.
-* `com.evora.saga`: Orchestration logic and simulated microservices.
+* `com.evora.domain`: Aggregate roots and state machine.
+* `com.evora.saga`: Orchestration logic and distributed workers.
 * `com.evora.projection`: CQRS projection and MongoDB read-model repository.
-* `com.evora.store`: PostgreSQL event store implementation and JSON serialization.
+* `com.evora.store`: PostgreSQL event store implementation.
 * `com.evora.api.http`: NioFlow server and REST endpoints.
 * `src/main/resources/static`: Dashboard assets including CSS, JavaScript, and HTML.
 

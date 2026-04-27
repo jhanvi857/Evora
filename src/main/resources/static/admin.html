@@ -37,52 +37,55 @@
         <main class="main-view">
             <header class="dashboard-header">
                 <div class="header-title">
-                    <h1>System Oversight</h1>
-                    <p>Global telemetry and saga orchestration health</p>
+                    <h1>Queue Telemetry</h1>
+                    <p>Global throughput and worker health metrics</p>
                 </div>
-                <div class="header-actions">
-                    <button class="btn-primary" id="btn-refresh"><i data-lucide="refresh-cw"></i> Refresh Ledger</button>
+                <div class="header-actions" style="display:flex; gap:10px;">
+                    <button class="btn-primary" id="btn-replay" style="background:var(--accent-blue);">
+                        <i data-lucide="rotate-ccw"></i> Replay Events
+                    </button>
+                    <button class="btn-primary" id="btn-refresh"><i data-lucide="refresh-cw"></i> Refresh</button>
                 </div>
             </header>
 
             <section class="metrics-grid">
                 <div class="metric-card">
-                    <div class="metric-icon purple"><i data-lucide="database"></i></div>
+                    <div class="metric-icon purple"><i data-lucide="layers"></i></div>
                     <div class="metric-info">
-                        <label>Ledger Entries</label>
-                        <h2 id="metric-total-orders">0</h2>
+                        <label>Total Jobs</label>
+                        <h2 id="metric-total-jobs">0</h2>
                     </div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-icon green"><i data-lucide="activity"></i></div>
+                    <div class="metric-icon green"><i data-lucide="zap"></i></div>
                     <div class="metric-info">
-                        <label>Settled Revenue</label>
-                        <h2 id="metric-revenue">$0.00</h2>
-                    </div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon yellow"><i data-lucide="workflow"></i></div>
-                    <div class="metric-info">
-                        <label>Saga Success</label>
+                        <label>Success Rate</label>
                         <h2 id="metric-success-rate">0%</h2>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon yellow"><i data-lucide="alert-circle"></i></div>
+                    <div class="metric-info">
+                        <label>Failed Jobs</label>
+                        <h2 id="metric-failed-jobs">0</h2>
                     </div>
                 </div>
             </section>
 
             <section class="section-card">
                 <div class="section-header">
-                    <h2>Global Order Stream</h2>
+                    <h2>Global Job Stream</h2>
                 </div>
                 <table>
                     <thead>
                         <tr>
-                            <th>Trace ID</th>
-                            <th>Customer</th>
-                            <th>Items</th>
-                            <th>Total</th>
+                            <th>Job ID</th>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>Priority</th>
                             <th>State</th>
                             <th>Timestamp</th>
-                            <th>Deep Trace</th>
+                            <th>Trace</th>
                         </tr>
                     </thead>
                     <tbody id="orders-tbody"></tbody>
@@ -92,7 +95,7 @@
 
         <aside class="drawer" id="timeline-drawer">
             <div class="modal-header">
-                <h2>Deep Trace Analysis</h2>
+                <h2>Raw Event Trace</h2>
                 <button id="close-drawer" class="btn-close"><i data-lucide="x"></i></button>
             </div>
             <div class="drawer-meta" style="margin-bottom:20px;">
