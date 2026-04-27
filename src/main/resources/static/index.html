@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evora | My Workspace</title>
+    <title>Evora | Job Queue Portal</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -14,7 +14,7 @@
         <aside class="sidebar" id="sidebar">
             <div class="logo">
                 <div class="logo-icon">E</div>
-                <span>Evora OMS</span>
+                <span>Evora Queue</span>
             </div>
             
             <nav class="nav-links">
@@ -32,9 +32,9 @@
                 <div class="context-selector">
                     <i data-lucide="user"></i>
                     <select id="user-context">
-                        <option value="CUST-857">CUST-857</option>
-                        <option value="CUST-001">CUST-001</option>
-                        <option value="CUST-999">CUST-999</option>
+                        <option value="USER-857">USER-857</option>
+                        <option value="USER-001">USER-001</option>
+                        <option value="USER-999">USER-999</option>
                     </select>
                 </div>
             </div>
@@ -44,30 +44,31 @@
         <main class="main-view">
             <header class="dashboard-header">
                 <div class="header-title">
-                    <h1 id="view-title">My Orders</h1>
-                    <p>Track your real-time event lifecycle</p>
+                    <h1 id="view-title">My Jobs</h1>
+                    <p>Orchestrate distributed tasks with Event Sourcing</p>
                 </div>
                 <div class="header-actions">
                     <button class="btn-primary" id="btn-new-order">
-                        <i data-lucide="plus"></i> New Order
+                        <i data-lucide="plus"></i> Submit Job
                     </button>
                 </div>
             </header>
 
             <section class="section-card">
                 <div class="section-header">
-                    <h2>Live Activity Stream</h2>
+                    <h2>Live Job Stream</h2>
                     <button class="btn-icon" id="btn-refresh"><i data-lucide="rotate-cw"></i></button>
                 </div>
                 <table>
                     <thead>
                         <tr>
-                            <th>Order ID</th>
-                            <th>Items</th>
-                            <th>Amount</th>
+                            <th>Job ID</th>
+                            <th>Type</th>
+                            <th>Priority</th>
                             <th>Status</th>
+                            <th>Last Step</th>
                             <th>Timestamp</th>
-                            <th>Track</th>
+                            <th>Trace</th>
                         </tr>
                     </thead>
                     <tbody id="orders-tbody">
@@ -81,29 +82,49 @@
         <div class="modal-overlay" id="order-modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Place New Order</h2>
+                    <h2>Submit New Job</h2>
                     <button class="btn-close" id="close-modal"><i data-lucide="x"></i></button>
                 </div>
                 <form id="place-order-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Job Type</label>
+                            <select id="job-type">
+                                <option value="DATA_PROCESSING">Data Processing</option>
+                                <option value="IMAGE_RESIZE">Image Resizing</option>
+                                <option value="EMAIL_BATCH">Email Batch</option>
+                                <option value="REPORT_GEN">Report Generation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select id="job-priority">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HIGH">High</option>
+                                <option value="CRITICAL">Critical</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="form-group">
-                        <label>Demo Scenario</label>
+                        <label>Simulate Error (Saga Compensation)</label>
                         <select id="order-scenario">
-                            <option value="happy">Normal Success</option>
-                            <option value="inventory-fail">Simulate Stock Out</option>
-                            <option value="payment-fail">Simulate Payment Decline</option>
-                            <option value="shipping-fail">Simulate Shipping Failure</option>
+                            <option value="happy">No Error (Happy Path)</option>
+                            <option value="validation-fail">Validation Failed</option>
+                            <option value="execution-fail">Execution Failed</option>
+                            <option value="notification-fail">Notification Failed</option>
                         </select>
                     </div>
-                    <div class="items-section">
-                        <label style="font-size:14px; font-weight:600; color:var(--text-muted); margin-bottom:10px; display:block;">Order Items</label>
-                        <div id="dynamic-items-list" class="items-dynamic-list"></div>
-                        <button type="button" id="btn-add-item" style="background:none; border:none; color:var(--accent-purple); font-weight:700; cursor:pointer; margin-top:10px;">+ Add Another SKU</button>
+                    <div class="form-group">
+                        <label>Payload (JSON)</label>
+                        <textarea id="job-payload" class="mono" rows="5" placeholder='{"key": "value"}'></textarea>
                     </div>
-                    <div style="margin: 25px 0; padding: 20px; background: rgba(255,255,255,0.03); border-radius:15px; display:flex; justify-content:space-between;">
-                        <span style="font-weight:700;">Total Payable:</span>
-                        <span id="modal-total-price" style="font-weight:800; color:var(--accent-green);">$0.00</span>
+                    <div class="form-group">
+                        <label>Idempotency Key</label>
+                        <input type="text" id="idempotency-key" class="mono" placeholder="unique-request-id">
                     </div>
-                    <button type="submit" class="btn-submit" id="submit-order">Confirm & Execute</button>
+                    
+                    <button type="submit" class="btn-submit" id="submit-order">Submit to Queue</button>
                     <input type="hidden" id="order-id">
                 </form>
             </div>
@@ -111,7 +132,7 @@
 
         <aside class="drawer" id="timeline-drawer">
             <div class="modal-header">
-                <h2>Order Trace</h2>
+                <h2>Job Execution Trace</h2>
                 <button id="close-drawer" class="btn-close"><i data-lucide="x"></i></button>
             </div>
             <div class="drawer-meta" style="margin-bottom:20px;">

@@ -1,58 +1,54 @@
 package com.evora.api;
 
-import com.evora.application.OrderCommandService;
-import com.evora.application.OrderQueryService;
-import com.evora.application.OrderTimelineService;
-import com.evora.application.PlaceOrderRequest;
-import com.evora.projection.OrderView;
+import com.evora.application.JobCommandService;
+import com.evora.application.JobQueryService;
+import com.evora.application.JobTimelineService;
+import com.evora.application.SubmitJobRequest;
+import com.evora.domain.order.JobStatus;
+import com.evora.projection.JobView;
 import com.evora.shared.DomainEvent;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class OrderApi {
-    private final OrderCommandService commandService;
-    private final OrderQueryService queryService;
-    private final OrderTimelineService timelineService;
+    private final JobCommandService commandService;
+    private final JobQueryService queryService;
+    private final JobTimelineService timelineService;
 
-    public OrderApi(OrderCommandService commandService, OrderQueryService queryService, OrderTimelineService timelineService) {
+    public OrderApi(JobCommandService commandService, JobQueryService queryService, JobTimelineService timelineService) {
         this.commandService = commandService;
         this.queryService = queryService;
         this.timelineService = timelineService;
     }
 
-    public List<DomainEvent> placeOrder(PlaceOrderApiRequest request) {
-        return commandService.placeOrder(new PlaceOrderRequest(
-                request.orderId(),
-                request.customerId(),
-                request.items(),
-                request.idempotencyKey()
-        ));
+    public List<DomainEvent> submitJob(SubmitJobRequest request) {
+        return commandService.submitJob(request);
     }
 
-    public Optional<OrderApiResponse> getOrder(String orderId) {
-        return queryService.getOrderById(orderId).map(this::toApiResponse);
+    public Optional<JobView> getJob(String jobId) {
+        return queryService.getJobById(jobId);
     }
 
-    public List<OrderApiResponse> listOrders() {
-        return queryService.listOrders().stream().map(this::toApiResponse).toList();
+    public List<JobView> listJobs(String status) {
+        if (status != null && !status.isBlank()) {
+            return queryService.findByStatus(JobStatus.valueOf(status.toUpperCase()));
+        }
+        return queryService.listJobs();
     }
 
-    public List<DomainEvent> getOrderTimeline(String orderId) {
-        return timelineService.getTimeline(orderId);
+    public List<DomainEvent> getJobTimeline(String jobId) {
+        return timelineService.getTimeline(jobId);
     }
 
-    private OrderApiResponse toApiResponse(OrderView view) {
-        return new OrderApiResponse(
-                view.orderId(),
-                view.customerId(),
-                view.items(),
-                view.totalAmount(),
-                view.status(),
-                view.sagaStep(),
-                view.failureReason(),
-                view.updatedAt(),
-                view.timeline()
-        );
+    public Map<String, Object> getStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalJobs", queryService.getTotalJobs());
+        for (JobStatus status : JobStatus.values()) {
+            stats.put(status.name().toLowerCase() + "Count", queryService.getJobsByStatus(status));
+        }
+        return stats;
     }
 }

@@ -1,6 +1,6 @@
 package com.evora.store;
 
-import com.evora.domain.order.OrderAggregate;
+import com.evora.domain.order.JobAggregate;
 import com.evora.eventstore.EventStore;
 import com.evora.eventstore.OptimisticConcurrencyException;
 import com.evora.shared.DomainEvent;
@@ -214,18 +214,16 @@ public class PostgresEventStore implements EventStore {
     }
 
     private Map<String, Object> buildSnapshotPayload(List<DomainEvent> history) {
-        OrderAggregate aggregate = OrderAggregate.rehydrate(history);
+        JobAggregate aggregate = JobAggregate.rehydrate(history);
         Map<String, Object> snapshot = new LinkedHashMap<>();
-        snapshot.put("aggregateId", aggregate.orderId());
+        snapshot.put("jobId", aggregate.jobId());
         snapshot.put("version", aggregate.version());
-        snapshot.put("customerId", aggregate.customerId());
+        snapshot.put("userId", aggregate.userId());
+        snapshot.put("jobType", aggregate.jobType());
+        snapshot.put("priority", aggregate.priority());
         snapshot.put("status", aggregate.status().name());
         snapshot.put("failureReason", aggregate.failureReason());
-        snapshot.put("inventoryReserved", aggregate.inventoryReserved());
-        snapshot.put("paymentCharged", aggregate.paymentCharged());
-        snapshot.put("shipmentCreated", aggregate.shipmentCreated());
-        snapshot.put("totalAmount", aggregate.totalAmount());
-        snapshot.put("items", aggregate.items());
+        snapshot.put("payload", aggregate.payload());
         return snapshot;
     }
 

@@ -1,16 +1,12 @@
 package com.evora;
 
 import com.evora.api.OrderApi;
-import com.evora.api.PlaceOrderApiRequest;
+import com.evora.api.SubmitJobApiRequest;
 import com.evora.api.http.HttpOrderServer;
 import com.evora.application.EvoraRuntime;
 import com.evora.application.EvoraRuntimeConfig;
-import com.evora.domain.order.OrderItem;
+import com.evora.application.SubmitJobRequest;
 
-// import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -28,33 +24,37 @@ public class EvoraApplication {
             System.err.println("Failed to start dashboard server: " + e.getMessage());
         }
 
-        System.out.println("--- Evora CQRS CLI Mode ---");
-        System.out.println("You can also enter orders manually here, or use the Dashboard.");
+        System.out.println("--- Evora Job Queue CLI Mode ---");
+        System.out.println("You can also submit jobs manually here, or use the Dashboard.");
 
         try (Scanner scanner = new Scanner(System.in)) {
             while (true) {
-                System.out.println("\nOptions: [1] Manual Order, [2] Exit");
+                System.out.println("\nOptions: [1] Submit Job, [2] Exit");
                 String choice = scanner.nextLine();
                 if ("2".equals(choice))
                     break;
                 if (!"1".equals(choice))
                     continue;
 
-                String orderId = readText(scanner, "Order ID", "order-" + UUID.randomUUID());
-                String customerId = readText(scanner, "Customer ID", "customer-123");
+                String jobId = readText(scanner, "Job ID", "job-" + UUID.randomUUID());
+                String userId = readText(scanner, "User ID", "user-123");
+                String jobType = readText(scanner, "Job Type", "DATA_PROCESSING");
+                String priority = readText(scanner, "Priority", "MEDIUM");
+                String payload = readText(scanner, "Payload (JSON)", "{\"task\": \"example\"}");
                 String idempotencyKey = readText(scanner, "Idempotency Key", "idem-" + UUID.randomUUID());
-                List<OrderItem> items = readOrderItems(scanner);
 
-                PlaceOrderApiRequest request = new PlaceOrderApiRequest(
-                        orderId,
-                        customerId,
-                        items,
+                SubmitJobRequest request = new SubmitJobRequest(
+                        jobId,
+                        userId,
+                        jobType,
+                        priority,
+                        payload,
                         idempotencyKey);
 
-                orderApi.placeOrder(request);
+                orderApi.submitJob(request);
 
-                System.out.println("Timeline for " + orderId + ":");
-                orderApi.getOrderTimeline(orderId).forEach(event -> System.out.println("- " + event));
+                System.out.println("Trace for " + jobId + ":");
+                orderApi.getJobTimeline(jobId).forEach(event -> System.out.println("- " + event));
             }
         }
     }
@@ -62,9 +62,9 @@ public class EvoraApplication {
     private static EvoraRuntimeConfig resolveConfig(String scenario) {
         return switch (scenario) {
             case "happy" -> EvoraRuntimeConfig.happyPath();
-            case "inventory-fail" -> EvoraRuntimeConfig.inventoryFailure();
-            case "payment-fail" -> EvoraRuntimeConfig.paymentFailure();
-            case "shipping-fail" -> EvoraRuntimeConfig.shippingFailure();
+            case "validation-fail" -> EvoraRuntimeConfig.validationFailure();
+            case "execution-fail" -> EvoraRuntimeConfig.executionFailure();
+            case "notification-fail" -> EvoraRuntimeConfig.notificationFailure();
             default -> EvoraRuntimeConfig.mixed();
         };
     }
@@ -87,54 +87,6 @@ public class EvoraApplication {
             if (!value.isEmpty()) {
                 return value;
             }
-        }
-    }
-
-    private static List<OrderItem> readOrderItems(Scanner scanner) {
-        int count = readPositiveInt(scanner, "Number of items", 2);
-        List<OrderItem> items = new ArrayList<>();
-        for (int i = 1; i <= count; i++) {
-            String sku = readText(scanner, "Item " + i + " SKU", "sku-item-" + i);
-            int quantity = readPositiveInt(scanner, "Item " + i + " quantity", 1);
-            BigDecimal unitPrice = readPositiveDecimal(scanner, "Item " + i + " unit price", "100.00");
-            items.add(new OrderItem(sku, quantity, unitPrice));
-        }
-        return items;
-    }
-
-    private static int readPositiveInt(Scanner scanner, String label, int defaultValue) {
-        while (true) {
-            System.out.printf("%s [%d]: ", label, defaultValue);
-            String input = scanner.nextLine();
-            if (input == null || input.isBlank()) {
-                return defaultValue;
-            }
-            try {
-                int value = Integer.parseInt(input.trim());
-                if (value > 0) {
-                    return value;
-                }
-            } catch (NumberFormatException ignored) {
-                // continue prompting
-            }
-            System.out.println("Please enter a positive integer.");
-        }
-    }
-
-    private static BigDecimal readPositiveDecimal(Scanner scanner, String label, String defaultValue) {
-        while (true) {
-            System.out.printf("%s [%s]: ", label, defaultValue);
-            String input = scanner.nextLine();
-            String candidate = (input == null || input.isBlank()) ? defaultValue : input.trim();
-            try {
-                BigDecimal value = new BigDecimal(candidate);
-                if (value.compareTo(BigDecimal.ZERO) > 0) {
-                    return value;
-                }
-            } catch (NumberFormatException ignored) {
-                // continue prompting
-            }
-            System.out.println("Please enter a positive decimal value.");
         }
     }
 }

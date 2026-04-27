@@ -5,18 +5,12 @@ import com.evora.config.MongoClientFactory;
 import com.evora.config.PostgresDataSourceFactory;
 import com.evora.bus.EventBus;
 import com.evora.bus.InMemoryEventBus;
-import com.evora.handler.PlaceOrderCommandHandler;
 import com.evora.outbox.OutboxRelay;
-import com.evora.projection.MongoOrderViewRepository;
-import com.evora.projection.OrderProjector;
-import com.evora.projection.OrderViewRepository;
-import com.evora.saga.OrderSaga;
-import com.evora.saga.service.InventoryService;
-import com.evora.saga.service.PaymentService;
-import com.evora.saga.service.ShippingService;
-import com.evora.saga.service.SimulatedInventoryService;
-import com.evora.saga.service.SimulatedPaymentService;
-import com.evora.saga.service.SimulatedShippingService;
+import com.evora.projection.MongoJobViewRepository;
+import com.evora.projection.JobProjector;
+import com.evora.projection.JobViewRepository;
+import com.evora.saga.JobExecutionSaga;
+import com.evora.saga.service.*;
 import com.evora.store.EventJsonSerde;
 import com.evora.store.EventReplayService;
 import com.evora.store.PostgresEventStore;
@@ -31,23 +25,22 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class EvoraRuntime {
-    private final OrderCommandService commandService;
-    private final OrderQueryService queryService;
-    private final OrderTimelineService timelineService;
+    private final JobCommandService commandService;
+    private final JobQueryService queryService;
+    private final JobTimelineService timelineService;
     private final EventReplayService replayService;
     private final OutboxRelay outboxRelay;
     private final MongoClient mongoClient;
     private final DataSource dataSource;
 
     private EvoraRuntime(
-            OrderCommandService commandService,
-            OrderQueryService queryService,
-            OrderTimelineService timelineService,
+            JobCommandService commandService,
+            JobQueryService queryService,
+            JobTimelineService timelineService,
             EventReplayService replayService,
             OutboxRelay outboxRelay,
             MongoClient mongoClient,
-            DataSource dataSource
-    ) {
+            DataSource dataSource) {
         this.commandService = commandService;
         this.queryService = queryService;
         this.timelineService = timelineService;
@@ -65,46 +58,47 @@ public class EvoraRuntime {
 
         PostgresEventStore eventStore = new PostgresEventStore(dataSource, serde);
         EventBus eventBus = new InMemoryEventBus();
-        OrderEventAppender appender = new OrderEventAppender(eventStore, eventBus);
-        ProcessedCommandStore processedCommandStore = new ProcessedCommandStore();
+        JobEventAppender appender = new JobEventAppender(eventStore, eventBus);
 
-        InventoryService inventoryService = new SimulatedInventoryService(config.inventorySeed(), config.inventoryFailureRate());
-        PaymentService paymentService = new SimulatedPaymentService(config.paymentSeed(), config.paymentFailureRate());
-        ShippingService shippingService = new SimulatedShippingService(config.shippingSeed(), config.shippingFailureRate());
+        ValidationService validationService = new ValidationWorker(config.validationSeed(),
+                config.validationFailureRate());
+        ExecutionService executionService = new ExecutionWorker(config.executionSeed(), config.executionFailureRate());
+        NotificationService notificationService = new NotificationWorker(config.notificationSeed(),
+                config.notificationFailureRate());
 
         MongoClient mongoClient = MongoClientFactory.create(properties);
-        OrderViewRepository viewRepository = new MongoOrderViewRepository(
+        JobViewRepository viewRepository = new MongoJobViewRepository(
                 mongoClient.getDatabase(properties.mongoDatabase()),
-                properties.mongoOrderViewsCollection()
-        );
+                properties.mongoOrderViewsCollection());
 
-        OrderProjector projector = new OrderProjector(viewRepository);
-        OrderSaga orderSaga = new OrderSaga(appender, inventoryService, paymentService, shippingService);
+        JobProjector projector = new JobProjector(viewRepository);
+        JobExecutionSaga jobSaga = new JobExecutionSaga(appender, validationService, executionService,
+                notificationService);
 
-        eventBus.subscribe(orderSaga);
+        eventBus.subscribe(jobSaga);
 
         OutboxRelay outboxRelay = new OutboxRelay(dataSource, projector, serde, properties.outboxPollIntervalMs());
         outboxRelay.start();
 
         EventReplayService replayService = new EventReplayService(eventStore, viewRepository, projector);
 
-        PlaceOrderCommandHandler placeOrderHandler = new PlaceOrderCommandHandler(appender, processedCommandStore);
-        OrderCommandService commandService = new OrderCommandService(placeOrderHandler);
-        OrderQueryService queryService = new OrderQueryService(viewRepository);
-        OrderTimelineService timelineService = new OrderTimelineService(eventStore);
+        JobCommandService commandService = new JobCommandService(appender, replayService);
+        JobQueryService queryService = new JobQueryService(viewRepository);
+        JobTimelineService timelineService = new JobTimelineService(eventStore);
 
-        return new EvoraRuntime(commandService, queryService, timelineService, replayService, outboxRelay, mongoClient, dataSource);
+        return new EvoraRuntime(commandService, queryService, timelineService, replayService, outboxRelay, mongoClient,
+                dataSource);
     }
 
-    public OrderCommandService commandService() {
+    public JobCommandService commandService() {
         return commandService;
     }
 
-    public OrderQueryService queryService() {
+    public JobQueryService queryService() {
         return queryService;
     }
 
-    public OrderTimelineService timelineService() {
+    public JobTimelineService timelineService() {
         return timelineService;
     }
 
@@ -119,7 +113,6 @@ public class EvoraRuntime {
             try {
                 closeable.close();
             } catch (Exception ignored) {
-                // no-op
             }
         }
     }
@@ -128,7 +121,7 @@ public class EvoraRuntime {
         String migrationSql = readMigrationSql();
         String[] statements = migrationSql.split(";\\s*(\\r?\\n|$)");
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
+                Statement statement = connection.createStatement()) {
             for (String sql : statements) {
                 String trimmed = sql.trim();
                 if (!trimmed.isEmpty()) {
