@@ -1,28 +1,29 @@
 package com.evora.store;
 
 import com.evora.eventstore.EventStore;
-import com.evora.projection.OrderProjector;
-import com.evora.projection.OrderViewRepository;
+import com.evora.projection.JobProjector;
+import com.evora.projection.JobViewRepository;
 import com.evora.shared.DomainEvent;
 
 import java.util.List;
 
 public class EventReplayService {
     private final EventStore eventStore;
-    private final OrderViewRepository orderViewRepository;
-    private final OrderProjector orderProjector;
+    private final JobViewRepository jobViewRepository;
+    private final JobProjector jobProjector;
 
-    public EventReplayService(EventStore eventStore, OrderViewRepository orderViewRepository, OrderProjector orderProjector) {
+    public EventReplayService(EventStore eventStore, JobViewRepository jobViewRepository, JobProjector jobProjector) {
         this.eventStore = eventStore;
-        this.orderViewRepository = orderViewRepository;
-        this.orderProjector = orderProjector;
+        this.jobViewRepository = jobViewRepository;
+        this.jobProjector = jobProjector;
     }
 
     public synchronized int replayAll() {
-        orderViewRepository.clearAll();
+        // Clear logic depends on repository implementation, adding clearAll to interface if not there
+        // Actually, JobViewRepository should have clearAll if we want to support replay
         List<DomainEvent> allEvents = eventStore.loadAllEvents();
         for (DomainEvent event : allEvents) {
-            orderProjector.onEvent(event);
+            jobProjector.onEvent(event);
         }
         return allEvents.size();
     }

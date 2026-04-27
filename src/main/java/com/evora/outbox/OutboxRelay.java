@@ -1,6 +1,6 @@
 package com.evora.outbox;
 
-import com.evora.projection.OrderProjector;
+import com.evora.projection.JobProjector;
 import com.evora.shared.DomainEvent;
 import com.evora.store.EventJsonSerde;
 
@@ -30,14 +30,14 @@ public class OutboxRelay implements AutoCloseable {
             """;
 
     private final DataSource dataSource;
-    private final OrderProjector projector;
+    private final JobProjector projector;
     private final EventJsonSerde serde;
     private final long pollIntervalMs;
     private final AtomicBoolean running;
 
     private Thread worker;
 
-    public OutboxRelay(DataSource dataSource, OrderProjector projector, EventJsonSerde serde, long pollIntervalMs) {
+    public OutboxRelay(DataSource dataSource, JobProjector projector, EventJsonSerde serde, long pollIntervalMs) {
         this.dataSource = dataSource;
         this.projector = projector;
         this.serde = serde;
