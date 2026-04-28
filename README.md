@@ -2,17 +2,90 @@
 
 Evora is a robust distributed job queue system built on top of Postgres with exactly-once idempotency guarantees and scalable worker management.
 
-## Architecture
+## System Architecture
 
 ```mermaid
 graph TD
-    API[HTTP API] --> DB[(Postgres Jobs Table)]
-    Worker1[Worker 1] -->|Poll & Claim| DB
-    Worker2[Worker 2] -->|Poll & Claim| DB
-    Worker3[Worker 3] -->|Poll & Claim| DB
-    Sweeper[Visibility Sweeper] -->|Requeue expired| DB
-    DB -->|Events| Proj[Job Projector]
-    Proj --> Mongo[(MongoDB Telemetry)]
+    Client([Client Application]) -->|Submit Job| API[Evora HTTP API]
+    API -->|Insert PENDING Job| DB[(Postgres: jobs table)]
+    API -->|Write Telemetry Event| DB_Events[(Postgres: job_events)]
+    
+    subgraph "Worker Pool"
+        Worker1[Worker 1]
+        Worker2[Worker 2]
+        WorkerN[Worker N]
+    end
+    
+    WorkerPool --"Poll (FOR UPDATE SKIP LOCKED)"--> DB
+    WorkerPool --"Heartbeat (Extend Lock)"--> DB
+    WorkerPool --"Complete/Fail"--> DB
+    
+    Sweeper[Visibility Sweeper] -->|"Requeue expired leases (< NOW)"| DB
+    
+    DB_Events -.->|"Pub/Sub via EventBus"| Proj[Job Projector]
+    Proj -->|"Upsert Queue Stats"| Mongo[(MongoDB)]
+    
+    AdminUI([Telemetry Dashboard]) -->|"Poll Stats"| API
+    API -->|"Read"| Mongo
+```
+
+## Job Lifecycle (State Machine)
+
+This diagram shows how a job transitions through its states within Evora.
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING : Submitted by Client
+    
+    PENDING --> RUNNING : Claimed by Worker
+    
+    RUNNING --> COMPLETED : Worker finishes successfully
+    RUNNING --> PENDING : Worker fails (Attempt < Max)
+    RUNNING --> PENDING : Lock expires (Visibility Sweeper)
+    RUNNING --> DLQ : Worker fails (Attempt >= Max)
+    RUNNING --> DLQ : Lock expires (Attempt >= Max)
+    
+    DLQ --> PENDING : Manual Retry from Dashboard
+    
+    COMPLETED --> [*]
+    DLQ --> [*]
+```
+
+## Queue Processing Sequence
+
+This sequence diagram illustrates the lifecycle of a single job, including idempotency checks and worker processing.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as Evora API
+    participant DB as Postgres DB
+    participant Worker
+
+    Client->>API: POST /jobs (idempotency_key)
+    API->>DB: SELECT * WHERE idempotency_key
+    alt Job Exists
+        DB-->>API: Return existing Job
+        API-->>Client: 200 OK (Already Exists)
+    else Job Does Not Exist
+        API->>DB: INSERT INTO jobs (status=PENDING)
+        API-->>Client: 201 Created
+    end
+
+    loop Every 10ms
+        Worker->>DB: UPDATE jobs SET status=RUNNING... FOR UPDATE SKIP LOCKED
+        DB-->>Worker: Returns 1 Claimed Job
+    end
+
+    Worker->>Worker: Process Task (Long running)
+    
+    loop Every 20 seconds
+        Worker->>API: POST /jobs/:id/heartbeat
+        API->>DB: UPDATE locked_until = NOW() + 30s
+    end
+
+    Worker->>API: POST /jobs/:id/complete
+    API->>DB: UPDATE jobs SET status=COMPLETED
 ```
 
 ## Exactly-Once Idempotency & Locking
