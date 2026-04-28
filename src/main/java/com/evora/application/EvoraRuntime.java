@@ -71,7 +71,7 @@ public class EvoraRuntime {
                 mongoClient.getDatabase(properties.mongoDatabase()),
                 properties.mongoOrderViewsCollection());
 
-        JobProjector projector = new JobProjector(viewRepository);
+        JobProjector projector = new JobProjector(mongoClient);
         JobExecutionSaga jobSaga = new JobExecutionSaga(appender, validationService, executionService,
                 notificationService);
 
