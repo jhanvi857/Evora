@@ -5,28 +5,51 @@ Evora is a robust distributed job queue system built on top of Postgres with exa
 ## System Architecture
 
 ```mermaid
-graph TD
-    Client([Client Application]) -->|Submit Job| API[Evora HTTP API]
-    API -->|Insert PENDING Job| DB[(Postgres: jobs table)]
-    API -->|Write Telemetry Event| DB_Events[(Postgres: job_events)]
-    
-    subgraph "Worker Pool"
-        Worker1[Worker 1]
-        Worker2[Worker 2]
-        WorkerN[Worker N]
+graph LR
+    subgraph Clients
+        App([Producer App])
+        Dash([Admin Dashboard])
     end
+
+    subgraph Evora Server
+        API[HTTP API]
+        Dispatcher[Worker Dispatcher]
+        Lifecycle[Lifecycle Manager]
+        Sweeper[Visibility Sweeper]
+        Projector[Job Projector]
+    end
+
+    subgraph Storage
+        PG[(PostgreSQL<br>jobs & events)]
+        Mongo[(MongoDB<br>telemetry)]
+    end
+
+    subgraph External Workers
+        W1[Worker 1]
+        W2[Worker 2]
+    end
+
+    %% Producer Flow
+    App -->|POST /jobs| API
+    API -->|Insert PENDING| PG
+
+    %% Worker Flow
+    W1 -->|GET /jobs/poll| API
+    W2 -->|POST /jobs/:id/complete| API
+    API --> Dispatcher
+    API --> Lifecycle
     
-    WorkerPool --"Poll (FOR UPDATE SKIP LOCKED)"--> DB
-    WorkerPool --"Heartbeat (Extend Lock)"--> DB
-    WorkerPool --"Complete/Fail"--> DB
+    Dispatcher -->|FOR UPDATE SKIP LOCKED| PG
+    Lifecycle -->|Update Status| PG
+
+    %% Background Tasks
+    Sweeper -.->|Find Expired Locks| PG
     
-    Sweeper[Visibility Sweeper] -->|"Requeue expired leases (< NOW)"| DB
-    
-    DB_Events -.->|"Pub/Sub via EventBus"| Proj[Job Projector]
-    Proj -->|"Upsert Queue Stats"| Mongo[(MongoDB)]
-    
-    AdminUI([Telemetry Dashboard]) -->|"Poll Stats"| API
-    API -->|"Read"| Mongo
+    %% Telemetry
+    Lifecycle -.->|Publish Event| Projector
+    Projector -->|Upsert Stats| Mongo
+    Dash -->|GET /queues/stats| API
+    API -->|Read| Mongo
 ```
 
 ## Job Lifecycle (State Machine)
