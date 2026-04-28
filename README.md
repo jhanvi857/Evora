@@ -1,148 +1,74 @@
-# Evora | Distributed Event-Sourced Job Queue
+# Evora - Job Queue
 
-Evora is a high-fidelity, distributed Job Queue system built on the NioFlow micro-framework. It demonstrates advanced distributed systems patterns including CQRS, Saga Orchestration, Event Sourcing, and Idempotent Command Handling within a unified, high-performance runtime.
+Evora is a robust distributed job queue system built on top of Postgres with exactly-once idempotency guarantees and scalable worker management.
 
-## System Architecture
-
-Evora utilizes a strict separation between job submission (commands) and job status tracking (query projections). The following diagram illustrates the component interaction and data flow across the system, utilizing a Polyglot Persistence strategy to optimize for both write integrity and read performance.
+## Architecture
 
 ```mermaid
 graph TD
-    subgraph Client_Tier [Client Tier]
-        UI[Job Dashboard]
-        Admin[Telemetry Portal]
-    end
-
-    subgraph API_Layer [API Layer / NioFlow]
-        Srv[HttpOrderServer]
-        Bridge[OrderApi]
-    end
-
-    subgraph Command_Side [Write Model / Event Sourcing]
-        Handler[SubmitJobCommandHandler]
-        Agg[JobAggregate]
-        Store[(PostgreSQL Event Store)]
-        Bus[Internal Event Bus]
-    end
-
-    subgraph Saga_Orchestrator [Distributed Coordination]
-        Orch[JobExecutionSaga]
-        Val[Validation Worker]
-        Exec[Execution Worker]
-        Notif[Notification Worker]
-    end
-
-    subgraph Query_Side [Read Model / CQRS]
-        Proj[JobProjector]
-        Repo[(MongoDB Read Model)]
-    end
-
-    UI --> Srv
-    Admin --> Srv
-    Srv --> Bridge
-    Bridge --> Handler
-    Handler --> Agg
-    Agg --> Store
-    Agg --> Bus
-    Bus --> Orch
-    Bus --> Proj
-    Orch --> Val
-    Orch --> Exec
-    Orch --> Notif
-    Proj --> Repo
-    Repo --> Bridge
+    API[HTTP API] --> DB[(Postgres Jobs Table)]
+    Worker1[Worker 1] -->|Poll & Claim| DB
+    Worker2[Worker 2] -->|Poll & Claim| DB
+    Worker3[Worker 3] -->|Poll & Claim| DB
+    Sweeper[Visibility Sweeper] -->|Requeue expired| DB
+    DB -->|Events| Proj[Job Projector]
+    Proj --> Mongo[(MongoDB Telemetry)]
 ```
 
-## Saga Execution Workflow
+## Exactly-Once Idempotency & Locking
 
-The job execution lifecycle is coordinated via a Saga. If any worker stage in the happy path fails, the system executes compensation logic to maintain consistency across distributed resources.
+Our core mechanic for safely claiming jobs across multiple concurrent workers without external queues (like RabbitMQ or Redis) relies on Postgres's native `FOR UPDATE SKIP LOCKED`.
 
-```mermaid
-sequenceDiagram
-    participant B as Event Bus
-    participant S as JobExecutionSaga
-    participant V as ValidationWorker
-    participant X as ExecutionWorker
-    participant N as NotificationWorker
-    participant E as Event Store (PostgreSQL)
-
-    Note over B,E: Scenario: Execution Failed
-    B->>S: JobSubmittedEvent
-    S->>V: Validate Job
-    V-->>S: Success
-    S->>E: ValidationPassedEvent
-    S->>X: Execute Payload
-    X-->>S: FAILURE (Runtime Error)
-    S->>E: ExecutionFailedEvent
-    S->>V: Release Reserved Resources (Compensate)
-    V-->>S: Success
-    S->>E: ValidationResourcesReleasedEvent
-    S->>E: JobFailedEvent (Status: EXECUTION_FAILED)
+```sql
+UPDATE jobs
+SET status        = 'RUNNING',
+    worker_id     = ?,
+    locked_until  = NOW() + (? || ' seconds')::INTERVAL,
+    attempt_count = attempt_count + 1
+WHERE id = (
+    SELECT id FROM jobs
+    WHERE status       = 'PENDING'
+      AND queue        = ?
+      AND scheduled_at <= NOW()
+    ORDER BY priority ASC, scheduled_at ASC
+    FOR UPDATE SKIP LOCKED
+    LIMIT 1
+)
+RETURNING *
 ```
 
-## Polyglot Persistence Strategy
+**Why this guarantees exactly-once processing:**
+1. **Idempotent Submission:** When a job is submitted, we first check the `idempotency_key`. If it exists, we return the existing job. This prevents the same operation from being queued multiple times.
+2. **Atomic Claiming:** `FOR UPDATE SKIP LOCKED` allows multiple workers to poll the table simultaneously. Instead of blocking each other waiting for a row lock, they instantly skip over rows already locked by other workers and grab the next available pending job.
+3. **Visibility Timeouts:** Rather than assuming a worker completed the job, we give them a "lease" (`locked_until`). If the worker crashes before completion, the lease expires. The `VisibilityTimeoutSweeper` will then requeue the job automatically.
 
-The system utilizes specialized storage engines for different operational requirements:
+## The Visibility Timeout Flow
 
-* **PostgreSQL (Write-Side)**: Used as the primary Event Store. It provides ACID compliance and transactional consistency to ensure that job lifecycle events are recorded with absolute integrity.
-* **MongoDB (Read-Side)**: Used for the CQRS Read Model. It stores denormalized job views as documents, allowing for high-performance, complex queries and status filtering without imposing load on the transactional engine.
+1. A worker polls and claims a job. The job status becomes `RUNNING` and a `locked_until` timestamp is set (e.g., 30 seconds into the future).
+2. The worker processes the job. If processing is slow, the worker periodically sends a heartbeat to extend the `locked_until` timestamp.
+3. If the worker crashes or hangs, it stops sending heartbeats.
+4. The `VisibilityTimeoutSweeper` runs periodically (e.g., every 10 seconds), finding jobs where `status = 'RUNNING'` and `locked_until < NOW()`.
+5. The sweeper resets the job to `PENDING` (requeuing it) and increments the attempt count. If the maximum attempt count is reached, it moves the job to the Dead Letter Queue (DLQ).
 
-## Dashboard and Observability
+## Key Design Decisions
 
-Evora provides specialized portals for job management:
+1. **Postgres as a Queue:** While dedicated message brokers are standard, using Postgres simplifies our operational overhead. With `SKIP LOCKED`, Postgres is highly capable of acting as a high-throughput queue while giving us transactional guarantees across business data and queue state.
+2. **Pull vs Push:** Workers actively poll the queue instead of the system pushing to them. This inherently provides backpressure—workers only take what they can handle, preventing overwhelming down-stream systems during traffic spikes.
+3. **Eventual Consistency Telemetry:** We separate operational queuing (Postgres) from telemetry (MongoDB). Domain events like `JobCompletedEvent` are published and projected into Mongo. This offloads expensive aggregation queries from our core Postgres database, ensuring queue latency stays minimal.
 
-* **User Dashboard**: Submit jobs and track real-time execution via a high-fidelity event timeline.
-* **Admin Panel**: Monitor global throughput, failure rates, and perform deep traces into raw JSON event streams.
+## Setup & Running
 
-### Event Tracing
-Every state transition is visible as a raw JSON log, allowing for inspection of Aggregate IDs, Idempotency Keys, and Versioning data as it is processed by the system.
-
-## Getting Started
-
-### Prerequisites
-* Java 17 or later
-* Maven
-* Docker Desktop (required for PostgreSQL and MongoDB infrastructure)
-
-### Infrastructure Setup
-Launch the persistent storage layer using the provided Docker configuration:
-
+Start the supporting infrastructure:
 ```bash
 docker-compose up -d
 ```
 
-### Launching the System
-The provided launch scripts handle compilation and start the NioFlow server automatically.
-
-**Windows (PowerShell):**
-```powershell
-.\launch-evora.ps1
-```
-
-**Linux / macOS (Bash):**
+Run the application:
 ```bash
-chmod +x launch-evora.sh
-./launch-evora.sh
+mvn clean compile exec:java -Dexec.mainClass="com.evora.EvoraApplication"
 ```
 
-Once running, the portals are accessible at:
-* **User Dashboard**: http://localhost:8080/index.html
-* **Admin Panel**: http://localhost:8080/admin.html
+## Dashboards
 
-## Simulation Scenarios
-Deterministic failures can be triggered during job submission to observe Saga compensation logic:
-
-* **VALIDATION_FAILED**: Triggers validation worker failure.
-* **EXECUTION_FAILED**: Triggers execution worker failure and validation rollback.
-* **NOTIFICATION_FAILED**: Triggers notification worker failure, execution rollback, and validation release.
-
-## Project Structure
-* `com.evora.domain`: Aggregate roots and state machine.
-* `com.evora.saga`: Orchestration logic and distributed workers.
-* `com.evora.projection`: CQRS projection and MongoDB read-model repository.
-* `com.evora.store`: PostgreSQL event store implementation.
-* `com.evora.api.http`: NioFlow server and REST endpoints.
-* `src/main/resources/static`: Dashboard assets including CSS, JavaScript, and HTML.
-
----
-Built for High-Performance Distributed Systems.
+- [Submit Job Dashboard](http://localhost:8080/index.html)
+- [Telemetry & Admin](http://localhost:8080/admin.html)

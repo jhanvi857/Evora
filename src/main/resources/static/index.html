@@ -3,146 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evora | Job Queue Portal</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>Evora Job Queue</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono:wght@400;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+        <div class="sidebar">
             <div class="logo">
                 <div class="logo-icon">E</div>
-                <span>Evora Queue</span>
+                <h2>Evora</h2>
             </div>
-            
-            <nav class="nav-links">
-                <a href="index.html" class="nav-item active">
-                    <i data-lucide="layout"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="admin.html" class="nav-item">
-                    <i data-lucide="shield"></i>
-                    <span>Admin Panel</span>
-                </a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <div class="context-selector">
-                    <i data-lucide="user"></i>
-                    <select id="user-context">
-                        <option value="USER-857">USER-857</option>
-                        <option value="USER-001">USER-001</option>
-                        <option value="USER-999">USER-999</option>
-                    </select>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main View -->
-        <main class="main-view">
-            <header class="dashboard-header">
-                <div class="header-title">
-                    <h1 id="view-title">My Jobs</h1>
-                    <p>Orchestrate distributed tasks with Event Sourcing</p>
-                </div>
-                <div class="header-actions">
-                    <button class="btn-primary" id="btn-new-order">
-                        <i data-lucide="plus"></i> Submit Job
-                    </button>
-                </div>
-            </header>
-
-            <section class="section-card">
-                <div class="section-header">
-                    <h2>Live Job Stream</h2>
-                    <button class="btn-icon" id="btn-refresh"><i data-lucide="rotate-cw"></i></button>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Job ID</th>
-                            <th>Type</th>
-                            <th>Priority</th>
-                            <th>Status</th>
-                            <th>Last Step</th>
-                            <th>Timestamp</th>
-                            <th>Trace</th>
-                        </tr>
-                    </thead>
-                    <tbody id="orders-tbody">
-                        <!-- Dynamic Rows -->
-                    </tbody>
-                </table>
-            </section>
-        </main>
-
-        <!-- Modals & Drawers -->
-        <div class="modal-overlay" id="order-modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Submit New Job</h2>
-                    <button class="btn-close" id="close-modal"><i data-lucide="x"></i></button>
-                </div>
-                <form id="place-order-form">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Job Type</label>
-                            <select id="job-type">
-                                <option value="DATA_PROCESSING">Data Processing</option>
-                                <option value="IMAGE_RESIZE">Image Resizing</option>
-                                <option value="EMAIL_BATCH">Email Batch</option>
-                                <option value="REPORT_GEN">Report Generation</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Priority</label>
-                            <select id="job-priority">
-                                <option value="LOW">Low</option>
-                                <option value="MEDIUM" selected>Medium</option>
-                                <option value="HIGH">High</option>
-                                <option value="CRITICAL">Critical</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Simulate Error (Saga Compensation)</label>
-                        <select id="order-scenario">
-                            <option value="happy">No Error (Happy Path)</option>
-                            <option value="validation-fail">Validation Failed</option>
-                            <option value="execution-fail">Execution Failed</option>
-                            <option value="notification-fail">Notification Failed</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Payload (JSON)</label>
-                        <textarea id="job-payload" class="mono" rows="5" placeholder='{"key": "value"}'></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Idempotency Key</label>
-                        <input type="text" id="idempotency-key" class="mono" placeholder="unique-request-id">
-                    </div>
-                    
-                    <button type="submit" class="btn-submit" id="submit-order">Submit to Queue</button>
-                    <input type="hidden" id="order-id">
-                </form>
+            <div class="nav-links">
+                <a href="/index.html" class="nav-item active">Submit Job</a>
+                <a href="/admin.html" class="nav-item">Telemetry</a>
             </div>
         </div>
 
-        <aside class="drawer" id="timeline-drawer">
-            <div class="modal-header">
-                <h2>Job Execution Trace</h2>
-                <button id="close-drawer" class="btn-close"><i data-lucide="x"></i></button>
+        <div class="main-view">
+            <div class="dashboard-header">
+                <div class="header-title">
+                    <h1>Submit Job</h1>
+                    <p>Add a new task to the distributed queue</p>
+                </div>
             </div>
-            <div class="drawer-meta" style="margin-bottom:20px;">
-                <p id="drawer-order-id" class="mono"></p>
-                <span id="drawer-status" class="badge"></span>
+
+            <div class="banner" id="idempotent-banner" style="display: none; background: rgba(245, 158, 11, 0.1); color: var(--accent-yellow); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--accent-yellow);">
+                <strong>⚠ Idempotent:</strong> Job already exists. Returning existing job.
             </div>
-            <div id="event-timeline" class="event-timeline"></div>
-        </aside>
+
+            <div class="metrics-grid" style="grid-template-columns: 1fr;">
+                <div class="metric-card" style="flex-direction: column; align-items: flex-start;">
+                    <form id="submit-form" style="width: 100%;">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Queue</label>
+                                <select id="queue">
+                                    <option value="critical">Critical</option>
+                                    <option value="high">High</option>
+                                    <option value="default" selected>Default</option>
+                                    <option value="bulk">Bulk</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Priority (1-10)</label>
+                                <input type="number" id="priority" value="5" min="1" max="10">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Payload (JSON)</label>
+                            <textarea id="payload" class="mono" rows="6" style="width: 100%; background: #11121e; border: 1px solid var(--border); padding: 14px; border-radius: 12px; color: var(--text-main);">{"task":"process_data"}</textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Idempotency Key</label>
+                            <input type="text" id="idempotencyKey" class="mono">
+                        </div>
+
+                        <button type="submit" class="btn-submit" style="margin-top: 10px;">Submit Job</button>
+                    </form>
+                    <p id="submit-result" style="margin-top: 20px; font-weight: 600; color: var(--accent-green);"></p>
+                </div>
+            </div>
+
+            <div class="section-card" style="margin-top: 40px;">
+                <div class="section-header">
+                    <h2>Simulate Scenarios</h2>
+                </div>
+                <div style="padding: 30px; display: flex; gap: 15px;">
+                    <button class="btn-primary" id="sim-dup" style="background: var(--accent-blue);">Simulate Duplicate Submit</button>
+                    <button class="btn-primary" id="sim-fail" style="background: var(--accent-red);">Simulate Failing Worker</button>
+                    <button class="btn-primary" id="sim-slow" style="background: var(--accent-yellow); color: #000;">Simulate Slow Worker</button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="drawer" id="tracking-drawer">
+            <h2>Job Tracker</h2>
+            <div class="form-group" style="margin-top: 20px;">
+                <input type="text" id="track-id" placeholder="Enter Job ID" class="mono">
+                <button id="track-btn" class="btn-primary" style="width: 100%; margin-top: 10px;">Track</button>
+            </div>
+            <div id="track-result" class="event-timeline"></div>
+        </div>
     </div>
-    <script src="script.js"></script>
-    <script>lucide.createIcons();</script>
+
+    <script>
+        function uuid() { return crypto.randomUUID(); }
+        document.getElementById('idempotencyKey').value = uuid();
+
+        document.getElementById('submit-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const payload = {
+                queue: document.getElementById('queue').value,
+                priority: parseInt(document.getElementById('priority').value),
+                payload: JSON.parse(document.getElementById('payload').value),
+                idempotencyKey: document.getElementById('idempotencyKey').value
+            };
+            const res = await fetch('/jobs', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.already_exists) {
+                document.getElementById('idempotent-banner').style.display = 'block';
+                document.getElementById('submit-result').innerText = 'Returned existing job: ' + data.job.id;
+            } else {
+                document.getElementById('idempotent-banner').style.display = 'none';
+                document.getElementById('submit-result').innerText = 'Job created successfully: ' + data.id;
+            }
+        };
+
+        document.getElementById('track-btn').onclick = async () => {
+            const id = document.getElementById('track-id').value;
+            const res = await fetch(`/jobs/${id}`);
+            const job = await res.json();
+            const eventsRes = await fetch(`/jobs/${id}/events`);
+            const events = await eventsRes.json();
+            
+            let html = `<div style="margin-bottom: 20px;"><span class="badge ${job.status === 'COMPLETED' ? 'badge-shipped' : (job.status === 'FAILED' || job.status === 'DLQ' ? 'badge-failed' : 'badge-pending')}">${job.status}</span></div>`;
+            
+            events.forEach(e => {
+                html += `
+                <div class="event-item ${e.event_type.includes('COMPLETED') ? 'success' : (e.event_type.includes('FAIL') || e.event_type.includes('DLQ') ? 'failure' : '')}">
+                    <span class="event-type">${e.event_type}</span>
+                    <div class="event-raw">${JSON.stringify(e.payload, null, 2)}</div>
+                </div>`;
+            });
+            document.getElementById('track-result').innerHTML = html;
+        };
+
+        // Open tracking drawer slightly to tease it
+        setTimeout(() => document.getElementById('tracking-drawer').classList.add('open'), 500);
+
+        // Simulators
+        document.getElementById('sim-dup').onclick = async () => {
+            const idKey = uuid();
+            document.getElementById('idempotencyKey').value = idKey;
+            document.querySelector('#submit-form button').click();
+            setTimeout(() => document.querySelector('#submit-form button').click(), 500);
+        };
+
+        document.getElementById('sim-fail').onclick = async () => {
+            const idKey = uuid();
+            const payload = { queue: "default", priority: 5, payload: {}, idempotencyKey: idKey };
+            const res = await fetch('/jobs', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+            });
+            const job = await res.json();
+            const jobId = job.id;
+            
+            for(let i=0; i<3; i++) {
+                const pollRes = await fetch('/jobs/poll?worker_id=fail-worker');
+                const polled = await pollRes.json();
+                if(polled.id === jobId) {
+                    await fetch(`/jobs/${jobId}/fail`, {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({worker_id: 'fail-worker', error: 'simulated error'})
+                    });
+                }
+            }
+            document.getElementById('track-id').value = jobId;
+            document.getElementById('track-btn').click();
+        };
+
+        document.getElementById('sim-slow').onclick = async () => {
+            const idKey = uuid();
+            const payload = { queue: "default", priority: 5, payload: {}, idempotencyKey: idKey };
+            const res = await fetch('/jobs', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+            });
+            const job = await res.json();
+            const jobId = job.id;
+            
+            await fetch('/jobs/poll?worker_id=slow-worker');
+            alert("Worker claimed job " + jobId + " but won't complete it. Sweeper will requeue it after visibility timeout.");
+            document.getElementById('track-id').value = jobId;
+            document.getElementById('track-btn').click();
+        };
+    </script>
 </body>
 </html>
