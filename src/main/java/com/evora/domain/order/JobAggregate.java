@@ -31,9 +31,9 @@ public class JobAggregate extends AggregateRoot {
         JobSubmittedEvent event = new JobSubmittedEvent(
                 command.aggregateId(),
                 version() + 1,
-                command.occurredAt(),
-                command.userId(),
-                command.jobType(),
+                command.timestamp(),
+                command.submittedBy(),
+                command.queue(),
                 command.priority(),
                 command.payload(),
                 command.idempotencyKey()
