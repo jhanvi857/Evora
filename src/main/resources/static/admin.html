@@ -6,39 +6,50 @@
     <title>Evora Telemetry Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono:wght@400;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
-        <div class="sidebar">
-            <div class="logo">
-                <div class="logo-icon">E</div>
-                <h2>Evora</h2>
-            </div>
-            <div class="nav-links">
-                <a href="/index.html" class="nav-item">Submit Job</a>
-                <a href="/admin.html" class="nav-item active">Telemetry</a>
-            </div>
-        </div>
+    <div class="aurora-bg"></div>
+    <div class="grain-overlay"></div>
 
-        <div class="main-view">
-            <div class="dashboard-header">
-                <div class="header-title">
-                    <h1>Telemetry Portal</h1>
-                    <p>Real-time queue depth and Dead Letter Queue management</p>
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <div class="brand-block">
+                <div class="brand-mark">E</div>
+                <div>
+                    <h1 class="brand-title">Evora</h1>
+                    <p class="brand-subtitle">Event-Driven Queue Fabric</p>
                 </div>
             </div>
-
-            <div class="metrics-grid" id="stats-grid">
-                <!-- Populated by JS -->
+            <nav class="nav-links">
+                <a href="index.html" class="nav-item">Queue Console</a>
+                <a href="admin.html" class="nav-item active">Telemetry</a>
+            </nav>
+            <div class="sidebar-note">
+                <p>Queue health, DLQ recovery, and system visibility for operators.</p>
             </div>
+        </aside>
 
-            <div class="section-card">
-                <div class="section-header">
-                    <h2>Dead Letter Queue (DLQ)</h2>
+        <main class="page-main">
+            <header class="page-header">
+                <div>
+                    <p class="eyebrow">Operations</p>
+                    <h2>Queue Telemetry Dashboard</h2>
+                    <p class="header-copy">Monitor lane pressure and recover dead-lettered jobs directly from this panel.</p>
                 </div>
-                <table>
+                <button id="refresh-telemetry" class="btn-secondary">Refresh now</button>
+            </header>
+
+            <section class="dashboard-grid telemetry-grid" id="stats-grid"></section>
+
+            <section class="surface-card reveal delayed-1">
+                <div class="surface-head">
+                    <h3>Dead Letter Queue</h3>
+                    <span class="lane-label danger">Recovery</span>
+                </div>
+
+                <table class="telemetry-table">
                     <thead>
                         <tr>
                             <th>Job ID</th>
@@ -49,105 +60,15 @@
                         </tr>
                     </thead>
                     <tbody id="dlq-body">
-                        <!-- Populated by JS -->
+                        <tr>
+                            <td colspan="5" class="empty-cell">Loading DLQ records...</td>
+                        </tr>
                     </tbody>
                 </table>
-            </div>
-        </div>
+            </section>
+        </main>
     </div>
 
-    <script>
-        async function loadStats() {
-            try {
-                const res = await fetch('/queues/stats');
-                const data = await res.json();
-                
-                const grid = document.getElementById('stats-grid');
-                let html = '';
-                
-                // Assuming data is an array of queue documents if from Mongo
-                if (Array.isArray(data)) {
-                    data.forEach(q => {
-                        html += `
-                        <div class="metric-card">
-                            <div class="metric-icon ${q.queue === 'critical' ? 'purple' : (q.queue === 'high' ? 'green' : 'yellow')}">
-                                ${q.queue.charAt(0).toUpperCase()}
-                            </div>
-                            <div class="metric-info">
-                                <label>Queue: ${q.queue}</label>
-                                <h2>${q.pending_count || 0} <span style="font-size: 14px; color: var(--text-muted); font-weight: normal;">pending</span></h2>
-                                <p style="font-size: 12px; color: var(--text-muted); margin-top: 5px;">
-                                    Completed (1h): ${q.completed_last_1h || 0} | Failed: ${q.failed_count || 0}
-                                </p>
-                            </div>
-                        </div>`;
-                    });
-                } else {
-                    // Fallback if data is the old map
-                    Object.keys(data).forEach(q => {
-                        if (q === 'throughput') return;
-                        html += `
-                        <div class="metric-card">
-                            <div class="metric-icon ${q === 'critical' ? 'purple' : (q === 'high' ? 'green' : 'yellow')}">
-                                ${q.charAt(0).toUpperCase()}
-                            </div>
-                            <div class="metric-info">
-                                <label>Queue: ${q}</label>
-                                <h2>${data[q].pending_count || 0} <span style="font-size: 14px; color: var(--text-muted); font-weight: normal;">pending</span></h2>
-                            </div>
-                        </div>`;
-                    });
-                }
-                
-                if (!html) {
-                    html = '<p style="color: var(--text-muted);">No queue stats available yet.</p>';
-                }
-                grid.innerHTML = html;
-            } catch (e) {
-                console.error("Failed to load stats", e);
-            }
-        }
-
-        async function loadDLQ() {
-            try {
-                const res = await fetch('/jobs/dlq');
-                const jobs = await res.json();
-                const tbody = document.getElementById('dlq-body');
-                
-                if (jobs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No jobs in DLQ.</td></tr>';
-                    return;
-                }
-                
-                let html = '';
-                jobs.forEach(j => {
-                    html += `
-                    <tr>
-                        <td class="mono">${j.id.split('-')[0]}...</td>
-                        <td><span class="priority-tag priority-${j.queue === 'critical' ? 'critical' : 'high'}">${j.queue}</span></td>
-                        <td>${j.attemptCount}</td>
-                        <td style="color: var(--accent-red); font-size: 13px;">${j.lastError || 'Unknown error'}</td>
-                        <td>
-                            <button class="btn-primary" style="padding: 8px 16px; font-size: 12px;" onclick="retry('${j.id}')">Retry</button>
-                        </td>
-                    </tr>`;
-                });
-                tbody.innerHTML = html;
-            } catch (e) {
-                console.error("Failed to load DLQ", e);
-            }
-        }
-
-        async function retry(id) {
-            await fetch(`/jobs/${id}/retry`, {method: 'POST'});
-            loadDLQ();
-            loadStats();
-        }
-
-        setInterval(loadStats, 2000);
-        setInterval(loadDLQ, 10000);
-        loadStats();
-        loadDLQ();
-    </script>
+    <script src="admin-script.js"></script>
 </body>
 </html>

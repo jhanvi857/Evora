@@ -1,120 +1,214 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const elements = {
-        ordersTable: document.getElementById('orders-tbody'),
-        modal: document.getElementById('order-modal'),
-        newOrderBtn: document.getElementById('btn-new-order'),
-        closeModal: document.getElementById('close-modal'),
-        orderForm: document.getElementById('place-order-form'),
-        userContext: document.getElementById('user-context'),
-        drawer: document.getElementById('timeline-drawer'),
-        eventTimeline: document.getElementById('event-timeline'),
-        drawerOrderId: document.getElementById('drawer-order-id'),
-        drawerStatus: document.getElementById('drawer-status'),
-        refreshBtn: document.getElementById('btn-refresh')
+document.addEventListener("DOMContentLoaded", () => {
+    const el = {
+        submitForm: document.getElementById("submit-form"),
+        queue: document.getElementById("queue"),
+        priority: document.getElementById("priority"),
+        payload: document.getElementById("payload"),
+        idempotencyKey: document.getElementById("idempotencyKey"),
+        banner: document.getElementById("idempotent-banner"),
+        submitResult: document.getElementById("submit-result"),
+        trackId: document.getElementById("track-id"),
+        trackBtn: document.getElementById("track-btn"),
+        trackResult: document.getElementById("track-result"),
+        simDup: document.getElementById("sim-dup"),
+        simFail: document.getElementById("sim-fail"),
+        simSlow: document.getElementById("sim-slow")
     };
 
-    let jobs = [];
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const newIdempotency = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
 
-    loadJobs();
-    setInterval(loadJobs, 5000);
+    el.idempotencyKey.value = newIdempotency();
 
-    elements.userContext.onchange = () => renderJobs();
-    elements.refreshBtn.onclick = () => loadJobs();
-    elements.newOrderBtn.onclick = () => {
-        document.getElementById('order-id').value = 'JOB-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-        document.getElementById('idempotency-key').value = 'IDEM-' + Date.now();
-        elements.modal.style.display = 'flex';
-        lucide.createIcons();
-    };
+    el.submitForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await submitFromForm();
+    });
 
-    elements.closeModal.onclick = () => elements.modal.style.display = 'none';
-    document.getElementById('close-drawer').onclick = () => elements.drawer.classList.remove('open');
+    el.trackBtn.addEventListener("click", async () => {
+        await trackJob(el.trackId.value.trim());
+    });
 
-    elements.orderForm.onsubmit = async (e) => {
-        e.preventDefault();
-        const scn = document.getElementById('order-scenario').value;
-        const uid = elements.userContext.value;
-        
-        const req = {
-            jobId: document.getElementById('order-id').value,
-            userId: uid,
-            jobType: document.getElementById('job-type').value,
-            priority: document.getElementById('job-priority').value,
-            payload: document.getElementById('job-payload').value,
-            scenario: scn,
-            idempotencyKey: document.getElementById('idempotency-key').value
+    el.simDup.addEventListener("click", async () => {
+        const key = newIdempotency();
+        el.idempotencyKey.value = key;
+        await submitFromForm();
+        await sleep(220);
+        await submitFromForm();
+    });
+
+    el.simFail.addEventListener("click", async () => {
+        el.submitResult.textContent = "Running failing worker simulation...";
+        const job = await submitJob({
+            queue: "default",
+            priority: 5,
+            payload: { scenario: "failing-worker" },
+            idempotencyKey: newIdempotency()
+        });
+
+        const jobId = resolveJobId(job);
+        if (!jobId) {
+            el.submitResult.textContent = "Failed to create simulation job.";
+            return;
+        }
+
+        for (let i = 0; i < 3; i += 1) {
+            try {
+                const pollRes = await fetch("/jobs/poll?worker_id=fail-worker");
+                if (!pollRes.ok) {
+                    continue;
+                }
+                const polled = await pollRes.json();
+                if (resolveJobId(polled) === jobId) {
+                    await fetch(`/jobs/${jobId}/fail`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ worker_id: "fail-worker", error: "simulated failure" })
+                    });
+                }
+            } catch (_e) {
+                break;
+            }
+        }
+
+        el.trackId.value = jobId;
+        await trackJob(jobId);
+    });
+
+    el.simSlow.addEventListener("click", async () => {
+        el.submitResult.textContent = "Running slow worker simulation...";
+        const job = await submitJob({
+            queue: "default",
+            priority: 5,
+            payload: { scenario: "slow-worker" },
+            idempotencyKey: newIdempotency()
+        });
+
+        const jobId = resolveJobId(job);
+        if (!jobId) {
+            el.submitResult.textContent = "Failed to create simulation job.";
+            return;
+        }
+
+        await fetch("/jobs/poll?worker_id=slow-worker");
+        alert(`Worker claimed job ${jobId} without completion. Sweeper should requeue after lock timeout.`);
+
+        el.trackId.value = jobId;
+        await trackJob(jobId);
+    });
+
+    async function submitFromForm() {
+        let payloadObj;
+        try {
+            payloadObj = JSON.parse(el.payload.value);
+        } catch (_error) {
+            el.submitResult.textContent = "Payload must be valid JSON.";
+            return;
+        }
+
+        const body = {
+            queue: el.queue.value,
+            priority: Number(el.priority.value),
+            payload: payloadObj,
+            idempotencyKey: el.idempotencyKey.value.trim() || newIdempotency()
         };
 
-        const btn = document.getElementById('submit-order');
-        btn.disabled = true;
-        btn.innerText = 'Submitting to Queue...';
+        const result = await submitJob(body);
+        const jobId = resolveJobId(result && (result.job || result));
 
-        try {
-            const r = await fetch('/api/jobs', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(req)
-            });
-            if(r.ok) {
-                elements.modal.style.display = 'none';
-                loadJobs();
+        if (result && result.already_exists) {
+            el.banner.classList.remove("hidden");
+            el.submitResult.textContent = `Existing job returned: ${jobId || "unknown"}`;
+        } else if (result) {
+            el.banner.classList.add("hidden");
+            el.submitResult.textContent = `Job created: ${jobId || "unknown"}`;
+            if (jobId) {
+                el.trackId.value = jobId;
             }
-        } catch(err) { console.error(err); }
-        finally {
-            btn.disabled = false;
-            btn.innerText = 'Submit to Queue';
-        }
-    };
-
-    async function loadJobs() {
-        try {
-            const r = await fetch('/api/jobs');
-            jobs = await r.json();
-            renderJobs();
-        } catch(e) {}
-    }
-
-    function renderJobs() {
-        const cur = elements.userContext.value;
-        const filtered = jobs.filter(j => j.userId === cur);
-        elements.ordersTable.innerHTML = filtered.map(j => {
-            return `
-            <tr>
-                <td><span class="mono">${j.jobId}</span></td>
-                <td><span class="tiny-tag">${j.jobType}</span></td>
-                <td><span class="priority-tag priority-${j.priority.toLowerCase()}">${j.priority}</span></td>
-                <td><span class="badge badge-${j.status.toLowerCase()}">${j.status}</span></td>
-                <td><span style="font-size:12px; color:var(--text-muted);">${j.currentStep || '-'}</span></td>
-                <td style="color:var(--text-muted); font-size:13px;">${new Date(j.updatedAt).toLocaleTimeString()}</td>
-                <td><button class="btn-icon" onclick="viewTimeline('${j.jobId}')"><i data-lucide="activity"></i></button></td>
-            </tr>
-        `; }).join('') || '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted);">No jobs in your history.</td></tr>';
-        lucide.createIcons();
-    }
-
-    window.viewTimeline = async (id) => {
-        const job = jobs.find(j => j.jobId === id);
-        elements.drawerOrderId.innerText = id;
-        elements.drawerStatus.innerText = job.status;
-        elements.drawerStatus.className = `badge badge-${job.status.toLowerCase()}`;
-        
-        elements.drawer.classList.add('open');
-        elements.eventTimeline.innerHTML = '<div class="loader">Fetching Event Stream...</div>'; 
-        
-        try {
-            const r = await fetch(`/api/jobs/${id}/timeline`);
-            const evts = await r.json();
-            elements.eventTimeline.innerHTML = evts.map(e => `
-                <div style="margin-bottom: 20px; font-family: 'JetBrains Mono', monospace;">
-                    <div style="color: var(--accent-purple); font-weight: 800; font-size: 14px; margin-bottom: 5px;">EVENT: ${e.aggregateId} [v${e.version}]</div>
-                    <pre style="background: #000; color: #00ff00; padding: 15px; border-radius: 8px; font-size: 11px; overflow-x: auto; border: 1px solid #333;">${JSON.stringify(e, null, 2)}</pre>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        } catch(e){
-            elements.eventTimeline.innerHTML = '<div style="color:var(--accent-red);">Failed to load timeline.</div>';
+            el.idempotencyKey.value = newIdempotency();
         }
     }
 
-    lucide.createIcons();
+    async function submitJob(payload) {
+        try {
+            const response = await fetch("/jobs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                el.submitResult.textContent = data.error || "Submission failed.";
+                return null;
+            }
+            return data;
+        } catch (_error) {
+            el.submitResult.textContent = "Submission failed. Check service availability.";
+            return null;
+        }
+    }
+
+    async function trackJob(id) {
+        if (!id) {
+            el.trackResult.innerHTML = "<p class=\"scenario-note\">Enter a job ID to track.</p>";
+            return;
+        }
+
+        el.trackResult.innerHTML = "<p class=\"scenario-note\">Loading event stream...</p>";
+
+        try {
+            const [jobRes, eventsRes] = await Promise.all([
+                fetch(`/jobs/${id}`),
+                fetch(`/jobs/${id}/events`)
+            ]);
+
+            if (!jobRes.ok || !eventsRes.ok) {
+                el.trackResult.innerHTML = "<p class=\"scenario-note\">Unable to fetch job or events.</p>";
+                return;
+            }
+
+            const job = await jobRes.json();
+            const events = await eventsRes.json();
+            const status = String(job.status || "PENDING");
+
+            const items = Array.isArray(events)
+                ? events.map((entry) => {
+                    const eventType = String(entry.event_type || entry.eventType || "EVENT");
+                    const payload = entry.payload ?? entry;
+                    const itemClass = eventType.includes("COMPLETE")
+                        ? "success"
+                        : (eventType.includes("FAIL") || eventType.includes("DLQ") ? "failure" : "");
+
+                    return `
+                        <div class="event-item ${itemClass}">
+                            <span class="event-type">${eventType}</span>
+                            <pre class="event-raw">${escapeHtml(JSON.stringify(payload, null, 2))}</pre>
+                        </div>
+                    `;
+                }).join("")
+                : "";
+
+            const badgeClass = status.includes("COMPLETE")
+                ? "badge-success"
+                : (status.includes("FAIL") || status.includes("DLQ") ? "badge-failed" : "badge-pending");
+
+            el.trackResult.innerHTML = `
+                <p style="margin-bottom: 0.8rem;"><span class="badge ${badgeClass}">${escapeHtml(status)}</span></p>
+                ${items || '<p class="scenario-note">No events recorded yet.</p>'}
+            `;
+        } catch (_error) {
+            el.trackResult.innerHTML = "<p class=\"scenario-note\">Tracking failed due to a network error.</p>";
+        }
+    }
+
+    function resolveJobId(job) {
+        return job && (job.id || job.jobId || job.job_id || null);
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;");
+    }
 });
