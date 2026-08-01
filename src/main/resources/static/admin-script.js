@@ -1,103 +1,138 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
     const elements = {
-        ordersTable: document.getElementById('orders-tbody'),
-        refreshBtn: document.getElementById('btn-refresh'),
-        replayBtn: document.getElementById('btn-replay'),
-        drawer: document.getElementById('timeline-drawer'),
-        drawerOrderId: document.getElementById('drawer-order-id'),
-        drawerStatus: document.getElementById('drawer-status'),
-        eventTimeline: document.getElementById('event-timeline'),
-        metrics: {
-            total: document.getElementById('metric-total-jobs'),
-            rate: document.getElementById('metric-success-rate'),
-            failed: document.getElementById('metric-failed-jobs')
-        }
+        statsGrid: document.getElementById("stats-grid"),
+        dlqBody: document.getElementById("dlq-body"),
+        refreshBtn: document.getElementById("refresh-telemetry")
     };
 
-    let jobs = [];
+    elements.refreshBtn.addEventListener("click", async () => {
+        await Promise.all([loadStats(), loadDLQ()]);
+    });
 
-    loadJobs();
-    setInterval(loadJobs, 5000);
+    elements.dlqBody.addEventListener("click", async (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement) || !target.matches("button[data-job-id]")) {
+            return;
+        }
 
-    elements.refreshBtn.onclick = () => loadJobs();
-    elements.replayBtn.onclick = async () => {
-        elements.replayBtn.disabled = true;
-        elements.replayBtn.innerText = 'Replaying...';
+        const jobId = target.dataset.jobId;
+        if (!jobId) {
+            return;
+        }
+
+        target.disabled = true;
+        target.textContent = "Retrying...";
+
         try {
-            const r = await fetch('/admin/replay', { method: 'POST' });
-            if (r.ok) {
-                const res = await r.json();
-                alert(`Replayed ${res.eventsReplayed} events successfully.`);
-                loadJobs();
+            await fetch(`/jobs/${jobId}/retry`, { method: "POST" });
+        } finally {
+            await Promise.all([loadStats(), loadDLQ()]);
+        }
+    });
+
+    setInterval(loadStats, 4000);
+    setInterval(loadDLQ, 12000);
+    loadStats();
+    loadDLQ();
+
+    async function loadStats() {
+        try {
+            const response = await fetch("/queues/stats");
+            if (!response.ok) {
+                throw new Error("Failed to load queue stats");
             }
-        } catch(e) { alert('Replay failed.'); }
-        finally {
-            elements.replayBtn.disabled = false;
-            elements.replayBtn.innerHTML = '<i data-lucide="rotate-ccw"></i> Replay Events';
-            lucide.createIcons();
-        }
-    };
 
-    document.getElementById('close-drawer').onclick = () => elements.drawer.classList.remove('open');
+            const raw = await response.json();
+            const items = normalizeStats(raw);
 
-    async function loadJobs() {
-        try {
-            const r = await fetch('/api/jobs');
-            jobs = await r.json();
-            renderJobs();
-        } catch(e) {}
-    }
+            if (items.length === 0) {
+                elements.statsGrid.innerHTML = "<p class=\"scenario-note\">No queue stats available yet.</p>";
+                return;
+            }
 
-    function renderJobs() {
-        elements.ordersTable.innerHTML = jobs.map(j => `
-            <tr>
-                <td><span class="mono">${j.jobId}</span></td>
-                <td><b>${j.userId}</b></td>
-                <td><span class="tiny-tag">${j.jobType}</span></td>
-                <td><span class="priority-tag priority-${j.priority.toLowerCase()}">${j.priority}</span></td>
-                <td><span class="badge badge-${j.status.toLowerCase()}">${j.status}</span></td>
-                <td style="color:var(--text-muted); font-size:12px;">${new Date(j.updatedAt).toLocaleTimeString()}</td>
-                <td><button class="btn-icon" onclick="viewTimeline('${j.jobId}')"><i data-lucide="activity"></i></button></td>
-            </tr>
-        `).join('') || '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted);">System queue is empty.</td></tr>';
-        
-        updateStats(jobs);
-        lucide.createIcons();
-    }
+            elements.statsGrid.innerHTML = items.map((stat) => {
+                const lane = String(stat.queue || "default").toLowerCase();
+                const pending = Number(stat.pending_count || 0);
+                const completed = Number(stat.completed_last_1h || 0);
+                const failed = Number(stat.failed_count || 0);
 
-    function updateStats(data) {
-        const total = data.length;
-        const success = data.filter(j => j.status === 'COMPLETED').length;
-        const failed = data.filter(j => j.status.includes('FAILED')).length;
-        const rate = total === 0 ? 0 : Math.round((success / total) * 100);
-
-        elements.metrics.total.innerText = total;
-        elements.metrics.rate.innerText = `${rate}%`;
-        elements.metrics.failed.innerText = failed;
-    }
-
-    window.viewTimeline = async (id) => {
-        const job = jobs.find(j => j.jobId === id);
-        elements.drawerOrderId.innerText = id;
-        elements.drawerStatus.innerText = job.status;
-        elements.drawerStatus.className = `badge badge-${job.status.toLowerCase()}`;
-        elements.drawer.classList.add('open');
-        
-        elements.eventTimeline.innerHTML = '<div class="loader">Accessing Event Store...</div>';
-        try {
-            const r = await fetch(`/api/jobs/${id}/timeline`);
-            const evts = await r.json();
-            elements.eventTimeline.innerHTML = evts.map(e => `
-                <div style="margin-bottom: 20px; font-family: 'JetBrains Mono', monospace;">
-                    <div style="color: var(--accent-purple); font-weight: 800; font-size: 14px; margin-bottom: 5px;">EVENT: ${e.aggregateId} [v${e.version}]</div>
-                    <pre style="background: #000; color: #00ff00; padding: 15px; border-radius: 8px; font-size: 11px; overflow-x: auto; border: 1px solid #333;">${JSON.stringify(e, null, 2)}</pre>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        } catch(e){
-            elements.eventTimeline.innerHTML = '<div style="color:var(--accent-red);">Trace failed.</div>';
+                return `
+                    <article class="metric-card reveal">
+                        <div class="metric-top">
+                            <p class="metric-lane">${escapeHtml(lane)} lane</p>
+                            <span class="metric-pill ${lane}">${escapeHtml(lane)}</span>
+                        </div>
+                        <p class="metric-nums">${pending}</p>
+                        <p class="metric-row">completed 1h: ${completed}</p>
+                        <p class="metric-row">failed: ${failed}</p>
+                    </article>
+                `;
+            }).join("");
+        } catch (_error) {
+            elements.statsGrid.innerHTML = "<p class=\"scenario-note\">Queue stats are currently unavailable.</p>";
         }
     }
 
-    lucide.createIcons();
+    async function loadDLQ() {
+        try {
+            const response = await fetch("/jobs/dlq");
+            if (!response.ok) {
+                throw new Error("Failed to load DLQ");
+            }
+
+            const jobs = await response.json();
+            if (!Array.isArray(jobs) || jobs.length === 0) {
+                elements.dlqBody.innerHTML = "<tr><td colspan=\"5\" class=\"empty-cell\">No jobs in DLQ.</td></tr>";
+                return;
+            }
+
+            elements.dlqBody.innerHTML = jobs.map((job) => {
+                const id = String(job.id || "");
+                const queue = String(job.queue || "default").toLowerCase();
+                const attempts = Number(job.attemptCount || 0);
+                const lastError = String(job.lastError || "Unknown error");
+
+                return `
+                    <tr>
+                        <td class="mono">${escapeHtml(shortId(id))}</td>
+                        <td><span class="metric-pill ${escapeHtml(queue)}">${escapeHtml(queue)}</span></td>
+                        <td>${attempts}</td>
+                        <td>${escapeHtml(lastError)}</td>
+                        <td><button class="btn-secondary danger" data-job-id="${escapeHtml(id)}">Retry</button></td>
+                    </tr>
+                `;
+            }).join("");
+        } catch (_error) {
+            elements.dlqBody.innerHTML = "<tr><td colspan=\"5\" class=\"empty-cell\">DLQ data unavailable.</td></tr>";
+        }
+    }
+
+    function normalizeStats(raw) {
+        if (Array.isArray(raw)) {
+            return raw;
+        }
+
+        if (raw && typeof raw === "object") {
+            return Object.keys(raw)
+                .filter((key) => key !== "throughput")
+                .map((key) => ({ queue: key, ...raw[key] }));
+        }
+
+        return [];
+    }
+
+    function shortId(value) {
+        if (!value) {
+            return "-";
+        }
+        return value.length > 16 ? `${value.slice(0, 8)}...${value.slice(-4)}` : value;
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;");
+    }
 });
