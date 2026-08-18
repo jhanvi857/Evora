@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-base: #0a0a0c;
+  --bg-surface: #121215;
+  --bg-surface-hover: #1c1c21;
+  --border-color: #27272a;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: #f4f4f5;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #f97316;
+}
+
+code, pre, kbd, .font-mono {
+  font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+/* MDX / Content styling */
+.prose-evora h1 {
+  font-family: var(--font-space), sans-serif;
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 2rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 0.75rem;
+  letter-spacing: -0.025em;
+}
+
+.prose-evora h2 {
+  font-family: var(--font-space), sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 3.25rem;
+  margin-bottom: 1.25rem;
+  padding-top: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #27272a;
+  letter-spacing: -0.025em;
+}
+
+.prose-evora h3 {
+  font-family: var(--font-space), sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin-top: 2.25rem;
+  margin-bottom: 1rem;
+  padding-top: 0.5rem;
+  letter-spacing: -0.025em;
+}
+
+.prose-evora p {
+  color: #d4d4d8;
+  font-size: 1rem;
+  line-height: 1.75;
+  margin-bottom: 1.5rem;
+}
+
+.prose-evora ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 1.25rem;
+  margin-bottom: 1.5rem;
+  color: #d4d4d8;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.prose-evora li {
+  margin-bottom: 0.5rem;
+}
+
+.prose-evora code:not(pre code) {
+  background-color: #18181b;
+  border: 1px solid #27272a;
+  color: #fdba74;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 400;
+}
