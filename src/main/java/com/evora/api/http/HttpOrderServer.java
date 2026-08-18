@@ -49,9 +49,36 @@ public class HttpOrderServer {
     public void start() {
         NioFlowApp app = new NioFlowApp();
 
+        // Health check endpoint
+        app.get("/health", ctx -> {
+            ctx.status(200).json(Map.of(
+                "status", "UP",
+                "service", "Evora Distributed Job Queue Engine",
+                "timestamp", Instant.now().toString()
+            ));
+        });
+
+        app.get("/api/v1/health", ctx -> {
+            ctx.status(200).json(Map.of(
+                "status", "UP",
+                "service", "Evora Distributed Job Queue Engine",
+                "version", "1.0.0",
+                "timestamp", Instant.now().toString()
+            ));
+        });
+
+        // 1. Job Creation
         app.post("/jobs", ctx -> {
             try {
                 String bodyString = ctx.bodyAsString();
+                if (bodyString.length() > 512 * 1024) {
+                    ctx.status(413).json(Map.of(
+                        "error", "PAYLOAD_TOO_LARGE",
+                        "message", "Payload exceeds 512KB limit. Store large data in S3 and pass reference."
+                    ));
+                    return;
+                }
+
                 @SuppressWarnings("unchecked")
                 Map<String, Object> bodyMap = objectMapper.readValue(bodyString, Map.class);
                 
@@ -77,14 +104,54 @@ public class HttpOrderServer {
                     ctx.status(201).json(result.getJob());
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                ctx.status(400).json(Map.of("error", e.getMessage()));
+                ctx.status(400).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Bad request"));
             }
         });
 
+        app.post("/api/v1/jobs", ctx -> {
+            try {
+                String bodyString = ctx.bodyAsString();
+                if (bodyString.length() > 512 * 1024) {
+                    ctx.status(413).json(Map.of(
+                        "error", "PAYLOAD_TOO_LARGE",
+                        "message", "Payload exceeds 512KB limit."
+                    ));
+                    return;
+                }
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> bodyMap = objectMapper.readValue(bodyString, Map.class);
+                
+                String idempotencyKey = (String) bodyMap.getOrDefault("idempotencyKey", UUID.randomUUID().toString());
+                String queue = (String) bodyMap.getOrDefault("queue", "default");
+                String priority = bodyMap.get("priority") != null ? String.valueOf(bodyMap.get("priority")) : "5";
+                String payload = bodyMap.get("payload") != null ? objectMapper.writeValueAsString(bodyMap.get("payload")) : "{}";
+                
+                SubmitJobCommand cmd = new SubmitJobCommand(
+                    UUID.randomUUID().toString(),
+                    "user-1",
+                    queue,
+                    priority,
+                    payload,
+                    idempotencyKey,
+                    Instant.now()
+                );
+                
+                JobSubmitResult result = submitHandler.handle(cmd);
+                if (result.isAlreadyExists()) {
+                    ctx.status(200).json(Map.of("already_exists", true, "job", result.getJob()));
+                } else {
+                    ctx.status(201).json(result.getJob());
+                }
+            } catch (Exception e) {
+                ctx.status(400).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Bad request"));
+            }
+        });
+
+        // 2. Static Endpoints
         app.get("/jobs/poll", ctx -> {
             String workerId = ctx.query("worker_id");
-            if (workerId == null) {
+            if (workerId == null || workerId.isBlank()) {
                 ctx.status(400).json(Map.of("error", "worker_id required"));
                 return;
             }
@@ -96,7 +163,92 @@ public class HttpOrderServer {
             }
         });
 
+        app.get("/api/v1/jobs/poll", ctx -> {
+            String workerId = ctx.query("worker_id");
+            if (workerId == null || workerId.isBlank()) {
+                ctx.status(400).json(Map.of("error", "worker_id required"));
+                return;
+            }
+            Optional<Job> job = dispatcher.pollNextJob(workerId);
+            if (job.isPresent()) {
+                ctx.json(job.get());
+            } else {
+                ctx.status(404).json(Map.of("message", "No jobs available"));
+            }
+        });
+
+        app.get("/jobs/dlq", ctx -> {
+            ctx.json(jobStore.findDLQJobs(50, 0));
+        });
+        app.get("/api/v1/jobs/dlq", ctx -> {
+            ctx.json(jobStore.findDLQJobs(50, 0));
+        });
+
+        app.get("/system/jobs", ctx -> {
+            ctx.json(jobStore.findAllJobs(100));
+        });
+        app.get("/api/v1/jobs", ctx -> {
+            ctx.json(jobStore.findAllJobs(100));
+        });
+
+        app.post("/jobs/dlq/retry-all", ctx -> {
+            int count = jobStore.retryAllDLQJobs();
+            ctx.status(200).json(Map.of("status", "retried_all", "count", count));
+        });
+        app.post("/api/v1/jobs/dlq/retry-all", ctx -> {
+            int count = jobStore.retryAllDLQJobs();
+            ctx.status(200).json(Map.of("status", "retried_all", "count", count));
+        });
+
+        app.post("/jobs/dlq/purge", ctx -> {
+            int count = jobStore.purgeDLQJobs();
+            ctx.status(200).json(Map.of("status", "purged", "count", count));
+        });
+        app.post("/api/v1/jobs/dlq/purge", ctx -> {
+            int count = jobStore.purgeDLQJobs();
+            ctx.status(200).json(Map.of("status", "purged", "count", count));
+        });
+
+        app.post("/admin/reset", ctx -> {
+            try {
+                jobStore.truncateAllData();
+                queueStatsCollection.deleteMany(new Document());
+                ctx.status(200).json(Map.of("status", "reset_successful", "message", "All database tables, events, and telemetry stats purged cleanly."));
+            } catch (Exception e) {
+                ctx.status(500).json(Map.of("error", e.getMessage()));
+            }
+        });
+
+        app.get("/queues/stats", ctx -> {
+            List<Document> stats = new ArrayList<>();
+            queueStatsCollection.find().projection(new Document("_id", 0)).into(stats);
+            ctx.json(stats);
+        });
+        app.get("/api/v1/queues/stats", ctx -> {
+            List<Document> stats = new ArrayList<>();
+            queueStatsCollection.find().projection(new Document("_id", 0)).into(stats);
+            ctx.json(stats);
+        });
+
+        // 3. Parameterized Endpoints
         app.post("/jobs/:id/heartbeat", ctx -> {
+            UUID jobId = UUID.fromString(ctx.pathParam("id"));
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, String> body = objectMapper.readValue(ctx.bodyAsString(), Map.class);
+                String workerId = body.get("worker_id");
+                boolean extended = jobStore.extendLock(jobId, workerId, 30);
+                if (!extended) {
+                    ctx.status(409).json(Map.of("error", "JOB_EVICTED", "message", "Worker lease expired. Discard result."));
+                } else {
+                    ctx.status(200).json(Map.of("status", "ok"));
+                }
+            } catch (Exception e) {
+                ctx.status(400).json(Map.of("error", e.getMessage()));
+            }
+        });
+
+        app.post("/api/v1/jobs/:id/heartbeat", ctx -> {
             UUID jobId = UUID.fromString(ctx.pathParam("id"));
             try {
                 @SuppressWarnings("unchecked")
@@ -125,6 +277,18 @@ public class HttpOrderServer {
             }
         });
 
+        app.post("/api/v1/jobs/:id/complete", ctx -> {
+            UUID jobId = UUID.fromString(ctx.pathParam("id"));
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, String> body = objectMapper.readValue(ctx.bodyAsString(), Map.class);
+                lifecycleManager.complete(jobId, body.get("worker_id"));
+                ctx.status(200).json(Map.of("status", "completed"));
+            } catch (Exception e) {
+                ctx.status(400).json(Map.of("error", e.getMessage()));
+            }
+        });
+
         app.post("/jobs/:id/fail", ctx -> {
             UUID jobId = UUID.fromString(ctx.pathParam("id"));
             try {
@@ -137,25 +301,50 @@ public class HttpOrderServer {
             }
         });
 
-        app.get("/jobs/:id", ctx -> {
+        app.post("/api/v1/jobs/:id/fail", ctx -> {
             UUID jobId = UUID.fromString(ctx.pathParam("id"));
-            jobStore.findById(jobId)
-                .ifPresentOrElse(ctx::json, () -> ctx.status(404).json(Map.of("error", "Not found")));
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, String> body = objectMapper.readValue(ctx.bodyAsString(), Map.class);
+                lifecycleManager.fail(jobId, body.get("worker_id"), body.getOrDefault("error", "Unknown error"));
+                ctx.status(200).json(Map.of("status", "failed"));
+            } catch (Exception e) {
+                ctx.status(400).json(Map.of("error", e.getMessage()));
+            }
         });
 
-        app.get("/jobs/:id/events", ctx -> {
+        app.post("/jobs/:id/cancel", ctx -> {
             UUID jobId = UUID.fromString(ctx.pathParam("id"));
-            ctx.json(jobStore.findEventsByJobId(jobId));
+            try {
+                String bodyAsString = ctx.bodyAsString();
+                String reason = "Cancelled by user";
+                if (bodyAsString != null && !bodyAsString.isBlank()) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, String> body = objectMapper.readValue(bodyAsString, Map.class);
+                    reason = body.getOrDefault("reason", reason);
+                }
+                lifecycleManager.cancel(jobId, reason);
+                ctx.status(200).json(Map.of("status", "cancelled"));
+            } catch (Exception e) {
+                ctx.status(400).json(Map.of("error", e.getMessage()));
+            }
         });
 
-        app.get("/queues/stats", ctx -> {
-            List<Document> stats = new ArrayList<>();
-            queueStatsCollection.find().projection(new Document("_id", 0)).into(stats);
-            ctx.json(stats);
-        });
-
-        app.get("/jobs/dlq", ctx -> {
-            ctx.json(jobStore.findDLQJobs(50, 0));
+        app.post("/api/v1/jobs/:id/cancel", ctx -> {
+            UUID jobId = UUID.fromString(ctx.pathParam("id"));
+            try {
+                String bodyAsString = ctx.bodyAsString();
+                String reason = "Cancelled by user";
+                if (bodyAsString != null && !bodyAsString.isBlank()) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, String> body = objectMapper.readValue(bodyAsString, Map.class);
+                    reason = body.getOrDefault("reason", reason);
+                }
+                lifecycleManager.cancel(jobId, reason);
+                ctx.status(200).json(Map.of("status", "cancelled"));
+            } catch (Exception e) {
+                ctx.status(400).json(Map.of("error", e.getMessage()));
+            }
         });
 
         app.post("/jobs/:id/retry", ctx -> {
@@ -164,9 +353,37 @@ public class HttpOrderServer {
             ctx.status(200).json(Map.of("status", "retried"));
         });
 
+        app.post("/api/v1/jobs/:id/retry", ctx -> {
+            UUID jobId = UUID.fromString(ctx.pathParam("id"));
+            jobStore.retryDLQJob(jobId);
+            ctx.status(200).json(Map.of("status", "retried"));
+        });
+
+        app.get("/jobs/:id/events", ctx -> {
+            UUID jobId = UUID.fromString(ctx.pathParam("id"));
+            ctx.json(jobStore.findEventsByJobId(jobId));
+        });
+
+        app.get("/api/v1/jobs/:id/events", ctx -> {
+            UUID jobId = UUID.fromString(ctx.pathParam("id"));
+            ctx.json(jobStore.findEventsByJobId(jobId));
+        });
+
+        app.get("/jobs/:id", ctx -> {
+            UUID jobId = UUID.fromString(ctx.pathParam("id"));
+            jobStore.findById(jobId)
+                .ifPresentOrElse(ctx::json, () -> ctx.status(404).json(Map.of("error", "Not found")));
+        });
+
+        app.get("/api/v1/jobs/:id", ctx -> {
+            UUID jobId = UUID.fromString(ctx.pathParam("id"));
+            jobStore.findById(jobId)
+                .ifPresentOrElse(ctx::json, () -> ctx.status(404).json(Map.of("error", "Not found")));
+        });
+
         app.register(new StaticFilesPlugin("src/main/resources/static"));
 
-        System.out.println("\n[NioFlow] Evora Job Queue starting on port " + port);
+        System.out.println("\n[NioFlow] Evora Job Queue Control Plane running on port " + port);
         app.listen(port);
     }
 }

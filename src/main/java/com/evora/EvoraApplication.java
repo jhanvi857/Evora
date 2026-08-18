@@ -12,12 +12,20 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.postgresql.ds.PGSimpleDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class EvoraApplication {
+    private static final Logger log = LoggerFactory.getLogger(EvoraApplication.class);
+
     public static void main(String[] args) {
         Dotenv dotenv = Dotenv.load();
         
@@ -25,6 +33,9 @@ public class EvoraApplication {
         ds.setURL(dotenv.get("EVORA_POSTGRES_JDBC_URL", "jdbc:postgresql://localhost:5432/evora"));
         ds.setUser(dotenv.get("EVORA_POSTGRES_USERNAME", "postgres"));
         ds.setPassword(dotenv.get("EVORA_POSTGRES_PASSWORD", "postgres"));
+
+        // Auto-initialize schema if needed
+        initializeSchema(ds);
 
         MongoClient mongoClient = MongoClients.create(dotenv.get("EVORA_MONGO_URI", "mongodb://localhost:27017"));
 
@@ -45,7 +56,22 @@ public class EvoraApplication {
             HttpOrderServer server = new HttpOrderServer(8080, submitHandler, dispatcher, jobStore, lifecycleManager, mongoClient);
             new Thread(server::start).start();
         } catch (Exception e) {
-            System.err.println("Failed to start server: " + e.getMessage());
+            log.error("Failed to start server: ", e);
+        }
+    }
+
+    private static void initializeSchema(PGSimpleDataSource ds) {
+        try (Connection conn = ds.getConnection();
+             InputStream is = EvoraApplication.class.getResourceAsStream("/schema.sql")) {
+            if (is != null) {
+                String sql = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.execute(sql);
+                    log.info("[Evora] Schema initialization verified.");
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[Evora] Schema initialization check skipped or failed: {}", e.getMessage());
         }
     }
 }

@@ -50,7 +50,7 @@ public class PostgresJobStore {
                     SELECT id FROM jobs
                     WHERE status       = 'PENDING'
                       AND queue        = ?
-                      AND scheduled_at <= NOW()
+                      AND scheduled_at <= (NOW() + INTERVAL '3 seconds')
                     ORDER BY priority ASC, scheduled_at ASC
                     FOR UPDATE SKIP LOCKED
                     LIMIT 1
@@ -102,6 +102,8 @@ public class PostgresJobStore {
         return Optional.empty();
     }
 
+    private static final java.util.Calendar UTC_CAL = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+
     public Job insertJob(Job job) {
         String sql = """
                 INSERT INTO jobs (id, idempotency_key, queue, priority, payload, status, attempt_count, max_attempts, scheduled_at, created_at)
@@ -117,8 +119,8 @@ public class PostgresJobStore {
             stmt.setString(6, job.getStatus().name());
             stmt.setInt(7, job.getAttemptCount());
             stmt.setInt(8, job.getMaxAttempts());
-            stmt.setTimestamp(9, Timestamp.from(job.getScheduledAt()));
-            stmt.setTimestamp(10, Timestamp.from(job.getCreatedAt()));
+            stmt.setTimestamp(9, Timestamp.from(job.getScheduledAt()), (java.util.Calendar) UTC_CAL.clone());
+            stmt.setTimestamp(10, Timestamp.from(job.getCreatedAt()), (java.util.Calendar) UTC_CAL.clone());
             stmt.executeUpdate();
             return job;
         } catch (SQLException e) {
@@ -168,10 +170,14 @@ public class PostgresJobStore {
                         stmt.executeUpdate();
                     }
                 } else {
-                    String sql = "UPDATE jobs SET status = 'PENDING', worker_id = NULL, locked_until = NULL, last_error = ? WHERE id = ?";
+                    int attempts = Math.max(1, job.getAttemptCount());
+                    int backoffSeconds = Math.min(6, attempts * 2);
+
+                    String sql = "UPDATE jobs SET status = 'PENDING', worker_id = NULL, locked_until = NULL, scheduled_at = NOW() + (? || ' seconds')::INTERVAL, last_error = ? WHERE id = ?";
                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                        stmt.setString(1, error);
-                        stmt.setObject(2, jobId);
+                        stmt.setInt(1, backoffSeconds);
+                        stmt.setString(2, error);
+                        stmt.setObject(3, jobId);
                         stmt.executeUpdate();
                     }
                 }
@@ -185,6 +191,22 @@ public class PostgresJobStore {
         } catch (SQLException e) {
             throw new RuntimeException("Failed to fail job", e);
         }
+    }
+
+    public List<Job> findAllJobs(int limit) {
+        String sql = "SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?";
+        List<Job> jobs = new ArrayList<>();
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, limit);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next())
+                    jobs.add(mapJob(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find all jobs", e);
+        }
+        return jobs;
     }
 
     public List<Job> findExpiredLocks() {
@@ -242,13 +264,55 @@ public class PostgresJobStore {
     }
 
     public void retryDLQJob(UUID jobId) {
-        String sql = "UPDATE jobs SET status = 'PENDING', attempt_count = 0, worker_id = NULL, locked_until = NULL WHERE id = ?";
+        String sql = "UPDATE jobs SET status = 'PENDING', attempt_count = 0, worker_id = NULL, locked_until = NULL, scheduled_at = NOW() WHERE id = ?";
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setObject(1, jobId);
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to retry DLQ job", e);
+        }
+    }
+
+    public void cancelJob(UUID jobId, String reason) {
+        String sql = "UPDATE jobs SET status = 'CANCELLED', last_error = ?, worker_id = NULL, locked_until = NULL WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, reason != null ? reason : "Cancelled by user");
+            stmt.setObject(2, jobId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to cancel job", e);
+        }
+    }
+
+    public int retryAllDLQJobs() {
+        String sql = "UPDATE jobs SET status = 'PENDING', attempt_count = 0, worker_id = NULL, locked_until = NULL, scheduled_at = NOW() WHERE status = 'DLQ'";
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            return stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to retry all DLQ jobs", e);
+        }
+    }
+
+    public int purgeDLQJobs() {
+        String sql = "DELETE FROM jobs WHERE status = 'DLQ'";
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            return stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to purge DLQ jobs", e);
+        }
+    }
+
+    public void truncateAllData() {
+        String sql = "TRUNCATE TABLE jobs, job_events CASCADE";
+        try (Connection conn = dataSource.getConnection();
+                java.sql.Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to truncate data", e);
         }
     }
 
@@ -300,21 +364,21 @@ public class PostgresJobStore {
         job.setMaxAttempts(rs.getInt("max_attempts"));
         job.setWorkerId(rs.getString("worker_id"));
 
-        Timestamp lockedUntil = rs.getTimestamp("locked_until");
+        Timestamp lockedUntil = rs.getTimestamp("locked_until", (java.util.Calendar) UTC_CAL.clone());
         if (lockedUntil != null)
             job.setLockedUntil(lockedUntil.toInstant());
 
-        Timestamp scheduledAt = rs.getTimestamp("scheduled_at");
+        Timestamp scheduledAt = rs.getTimestamp("scheduled_at", (java.util.Calendar) UTC_CAL.clone());
         if (scheduledAt != null)
             job.setScheduledAt(scheduledAt.toInstant());
 
-        Timestamp completedAt = rs.getTimestamp("completed_at");
+        Timestamp completedAt = rs.getTimestamp("completed_at", (java.util.Calendar) UTC_CAL.clone());
         if (completedAt != null)
             job.setCompletedAt(completedAt.toInstant());
 
         job.setLastError(rs.getString("last_error"));
 
-        Timestamp createdAt = rs.getTimestamp("created_at");
+        Timestamp createdAt = rs.getTimestamp("created_at", (java.util.Calendar) UTC_CAL.clone());
         if (createdAt != null)
             job.setCreatedAt(createdAt.toInstant());
 

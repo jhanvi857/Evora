@@ -31,4 +31,11 @@ public class JobLifecycleManager {
         jobStore.appendJobEvent(jobId, "JOB_FAILED", Map.of("error", error, "worker_id", workerId));
         eventBus.publish(new JobFailedEvent(jobId, job.getQueue()));
     }
+
+    public void cancel(UUID jobId, String reason) {
+        Job job = jobStore.findById(jobId).orElseThrow(() -> new RuntimeException("Job not found"));
+        jobStore.cancelJob(jobId, reason);
+        jobStore.appendJobEvent(jobId, "JOB_CANCELLED", Map.of("reason", reason != null ? reason : "Cancelled by user"));
+        eventBus.publish(new JobFailedEvent(jobId, job.getQueue()));
+    }
 }
