@@ -1,3 +1,22 @@
-/target
+# Maven Build & Java
+/target/
 *.class
-*.env
+*.jar
+*.war
+
+# Environment & Config
+.env
+.env.local
+.env.*
+
+# Node.js & Next.js Documentation Site
+documentation/node_modules/
+documentation/.next/
+documentation/out/
+node_modules/
+
+# IDE & OS Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
