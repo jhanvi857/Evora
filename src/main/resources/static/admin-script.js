@@ -2,12 +2,41 @@ document.addEventListener("DOMContentLoaded", () => {
     const elements = {
         statsGrid: document.getElementById("stats-grid"),
         dlqBody: document.getElementById("dlq-body"),
-        refreshBtn: document.getElementById("refresh-telemetry")
+        refreshBtn: document.getElementById("refresh-telemetry"),
+        retryAllBtn: document.getElementById("dlq-retry-all"),
+        purgeBtn: document.getElementById("dlq-purge")
     };
 
     elements.refreshBtn.addEventListener("click", async () => {
         await Promise.all([loadStats(), loadDLQ()]);
     });
+
+    if (elements.retryAllBtn) {
+        elements.retryAllBtn.addEventListener("click", async () => {
+            elements.retryAllBtn.disabled = true;
+            try {
+                await fetch("/jobs/dlq/retry-all", { method: "POST" });
+            } finally {
+                elements.retryAllBtn.disabled = false;
+                await Promise.all([loadStats(), loadDLQ()]);
+            }
+        });
+    }
+
+    if (elements.purgeBtn) {
+        elements.purgeBtn.addEventListener("click", async () => {
+            if (!confirm("Are you sure you want to purge all jobs from DLQ?")) {
+                return;
+            }
+            elements.purgeBtn.disabled = true;
+            try {
+                await fetch("/jobs/dlq/purge", { method: "POST" });
+            } finally {
+                elements.purgeBtn.disabled = false;
+                await Promise.all([loadStats(), loadDLQ()]);
+            }
+        });
+    }
 
     elements.dlqBody.addEventListener("click", async (event) => {
         const target = event.target;

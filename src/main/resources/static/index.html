@@ -3,120 +3,509 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evora Queue Console</title>
+    <title>Evora Distributed Task Queue & Operations Console</title>
+    <meta name="description" content="Production-grade distributed job queue engine built on Postgres FOR UPDATE SKIP LOCKED with CQRS, Event Sourcing, Visibility Timeouts, and Client SDK.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="aurora-bg"></div>
-    <div class="grain-overlay"></div>
-
+<body class="dark-theme">
     <div class="app-shell">
+        <!-- Sidebar -->
         <aside class="app-sidebar">
             <div class="brand-block">
-                <div class="brand-mark">E</div>
+                <div class="brand-logo">
+                    <span class="logo-icon font-mono">E</span>
+                </div>
                 <div>
-                    <h1 class="brand-title">Evora</h1>
-                    <p class="brand-subtitle">Event-Driven Queue Fabric</p>
+                    <h1 class="brand-title">EVORA</h1>
+                    <p class="brand-subtitle">Distributed Queue Fabric</p>
                 </div>
             </div>
+
             <nav class="nav-links">
-                <a href="index.html" class="nav-item active">Queue Console</a>
-                <a href="admin.html" class="nav-item">Telemetry</a>
+                <button class="nav-item active" data-tab="tab-overview">
+                    Overview & Telemetry
+                </button>
+                <button class="nav-item" data-tab="tab-queue">
+                    Live Queue & Control
+                </button>
+                <button class="nav-item" data-tab="tab-dlq">
+                    DLQ Recovery Center
+                </button>
+                <button class="nav-item" data-tab="tab-chaos">
+                    Resilience Simulator
+                </button>
+                <button class="nav-item" data-tab="tab-integration">
+                    Integration & SDK Hub
+                </button>
             </nav>
-            <div class="sidebar-note">
-                <p>Submit workload, observe event flow, and test failure pathways from one control surface.</p>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="pulse-dot green"></span>
+                    <div>
+                        <p class="status-title">Engine Operational</p>
+                        <p class="status-sub">SKIP LOCKED / CQRS</p>
+                    </div>
+                </div>
+                <div class="system-meta">
+                    <span>Version 1.0.0</span>
+                    <span>Port 8080</span>
+                </div>
             </div>
         </aside>
 
+        <!-- Main Workspace -->
         <main class="page-main">
-            <header class="page-header">
-                <div>
-                    <p class="eyebrow">Control Plane</p>
-                    <h2>Submit Work To Queue Lanes</h2>
-                    <p class="header-copy">Shape a command payload, assign queue priority, and inspect lifecycle events in real-time.</p>
+            <!-- Global Top Bar -->
+            <header class="top-header">
+                <div class="header-titles">
+                    <p class="eyebrow" id="tab-eyebrow">Production Control Plane</p>
+                    <h2 class="view-title" id="tab-title">Distributed Operations Console</h2>
                 </div>
-                <div class="queue-chip">Idempotency enforced</div>
+                <div class="header-actions">
+                    <button id="btn-global-refresh" class="btn btn-secondary">
+                        Auto-Refresh ON
+                    </button>
+                    <button id="btn-reset-db" class="btn btn-danger-soft">
+                        Reset All Data
+                    </button>
+                </div>
             </header>
 
-            <div id="idempotent-banner" class="status-banner warning hidden">
-                Existing job detected for this idempotency key. Returning previous record.
+            <!-- Banner Alerts -->
+            <div id="idempotent-banner" class="banner banner-warning hidden">
+                <div>
+                    <strong>Idempotency Key Matched:</strong> This workload was previously submitted. Deduplication guard active, returning original job record.
+                </div>
             </div>
 
-            <section class="dashboard-grid submit-layout">
-                <article class="surface-card reveal">
-                    <div class="surface-head">
-                        <h3>Job Submission</h3>
-                        <span class="lane-label">Producer</span>
-                    </div>
+            <!-- TAB 1: OVERVIEW & TELEMETRY -->
+            <section id="tab-overview" class="tab-page active">
+                <div class="kpi-grid">
+                    <article class="kpi-card border-critical">
+                        <div class="kpi-top">
+                            <span class="kpi-label">Critical Queue (P1)</span>
+                            <span class="badge badge-critical">P1</span>
+                        </div>
+                        <p class="kpi-val" id="kpi-critical">0</p>
+                        <p class="kpi-sub">High-priority transactional items</p>
+                    </article>
+                    <article class="kpi-card border-default">
+                        <div class="kpi-top">
+                            <span class="kpi-label">Default Queue (P5)</span>
+                            <span class="badge badge-default">P5</span>
+                        </div>
+                        <p class="kpi-val" id="kpi-default">0</p>
+                        <p class="kpi-sub">Standard background operations</p>
+                    </article>
+                    <article class="kpi-card border-bulk">
+                        <div class="kpi-top">
+                            <span class="kpi-label">Bulk Queue (P10)</span>
+                            <span class="badge badge-bulk">P10</span>
+                        </div>
+                        <p class="kpi-val" id="kpi-bulk">0</p>
+                        <p class="kpi-sub">Batch & analytics processing</p>
+                    </article>
+                    <article class="kpi-card border-dlq">
+                        <div class="kpi-top">
+                            <span class="kpi-label">Dead Letter Queue</span>
+                            <span class="badge badge-danger">DLQ</span>
+                        </div>
+                        <p class="kpi-val text-danger" id="kpi-dlq">0</p>
+                        <p class="kpi-sub">Requires manual intervention</p>
+                    </article>
+                </div>
 
-                    <form id="submit-form" class="stack-form">
-                        <div class="form-grid two">
-                            <div class="form-group">
-                                <label>Queue</label>
-                                <select id="queue">
-                                    <option value="critical">Critical</option>
-                                    <option value="high">High</option>
-                                    <option value="default" selected>Default</option>
-                                    <option value="bulk">Bulk</option>
-                                </select>
+                <div class="charts-grid">
+                    <article class="surface-card">
+                        <div class="card-head">
+                            <h3>Queue Throughput & Processing Rate</h3>
+                            <span class="tag tag-live">Real-time Stream</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="throughputChart"></canvas>
+                        </div>
+                    </article>
+                    <article class="surface-card">
+                        <div class="card-head">
+                            <h3>Job Status Distribution</h3>
+                            <span class="tag">Postgres + Mongo Sync</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- TAB 2: LIVE QUEUE & CONTROL -->
+            <section id="tab-queue" class="tab-page">
+                <div class="grid-split">
+                    <!-- Left: Producer Form -->
+                    <article class="surface-card">
+                        <div class="card-head">
+                            <h3>Workload Producer & Dispatcher</h3>
+                            <span class="tag">Producer</span>
+                        </div>
+                        <p class="section-desc">Submit new jobs with custom payloads, priority levels, and idempotency guarantees.</p>
+
+                        <div class="preset-group">
+                            <label>Quick Presets:</label>
+                            <div class="preset-buttons">
+                                <button type="button" class="btn btn-sm btn-secondary" id="preset-payment">Payment (P1)</button>
+                                <button type="button" class="btn btn-sm btn-secondary" id="preset-email">Order Email (P5)</button>
+                                <button type="button" class="btn btn-sm btn-secondary" id="preset-report">Nightly Report (P10)</button>
                             </div>
-                            <div class="form-group">
-                                <label>Priority (1-10)</label>
-                                <input type="number" id="priority" value="5" min="1" max="10">
+                        </div>
+
+                        <form id="submit-form" class="form-stack">
+                            <div class="form-row two-col">
+                                <div class="form-field">
+                                    <label for="queue">Queue Lane</label>
+                                    <select id="queue">
+                                        <option value="critical">Critical (P1)</option>
+                                        <option value="high">High (P3)</option>
+                                        <option value="default" selected>Default (P5)</option>
+                                        <option value="bulk">Bulk (P10)</option>
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label for="priority">Priority (1 = Max, 10 = Min)</label>
+                                    <input type="number" id="priority" value="5" min="1" max="10">
+                                </div>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="payload">Payload (JSON)</label>
+                                <textarea id="payload" class="font-mono" rows="4">{"action": "process_order", "order_id": "ORD-9482", "amount": 149.99}</textarea>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="idempotencyKey">Idempotency Key (Deduplication Guard)</label>
+                                <div class="input-action-group">
+                                    <input type="text" id="idempotencyKey" class="font-mono">
+                                    <button type="button" id="btn-gen-key" class="btn btn-sm btn-secondary">New Key</button>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block">Dispatch Job To Queue</button>
+                        </form>
+                    </article>
+
+                    <!-- Right: Lifecycle Inspector -->
+                    <article class="surface-card">
+                        <div class="card-head">
+                            <h3>Job Inspector & Event Stream</h3>
+                            <span class="tag">Event Audit</span>
+                        </div>
+                        <div class="form-field">
+                            <label for="track-id">Job ID Lookup</label>
+                            <div class="input-action-group">
+                                <input type="text" id="track-id" class="font-mono" placeholder="Paste job UUID to inspect timeline...">
+                                <button id="track-btn" class="btn btn-secondary">Inspect</button>
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label>Payload (JSON)</label>
-                            <textarea id="payload" class="mono" rows="8">{"task":"process_data","source":"portal"}</textarea>
+                        <div id="track-result" class="timeline-box">
+                            <p class="text-muted">Enter a Job ID or click any row in the system table below to view event sourcing history.</p>
                         </div>
+                    </article>
+                </div>
 
-                        <div class="form-group">
-                            <label>Idempotency Key</label>
-                            <input type="text" id="idempotencyKey" class="mono">
-                        </div>
-
-                        <button type="submit" class="btn-submit">Submit Job</button>
-                    </form>
-                    <p id="submit-result" class="submit-result"></p>
-                </article>
-
-                <article class="surface-card reveal delayed-1">
-                    <div class="surface-head">
-                        <h3>Tracker</h3>
-                        <span class="lane-label neutral">Observer</span>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Job ID</label>
-                        <div class="inline-actions">
-                            <input type="text" id="track-id" class="mono" placeholder="Paste job UUID">
-                            <button id="track-btn" class="btn-secondary">Track</button>
+                <!-- Table Section -->
+                <article class="surface-card style-table-card">
+                    <div class="card-head">
+                        <h3>System Jobs (PostgreSQL Write Store)</h3>
+                        <div class="table-actions">
+                            <input type="text" id="job-search" placeholder="Search by ID or Queue..." class="search-input">
+                            <select id="status-filter" class="filter-select">
+                                <option value="ALL">All Statuses</option>
+                                <option value="PENDING">PENDING</option>
+                                <option value="RUNNING">RUNNING</option>
+                                <option value="COMPLETED">COMPLETED</option>
+                                <option value="DLQ">DLQ</option>
+                            </select>
+                            <button id="btn-refresh-jobs" class="btn btn-sm btn-secondary">Refresh</button>
                         </div>
                     </div>
 
-                    <div id="track-result" class="event-timeline"></div>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Queue</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Attempts</th>
+                                    <th>Worker</th>
+                                    <th>Scheduled At</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobs-table-body">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">Loading queue data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </article>
             </section>
 
-            <section class="surface-card reveal delayed-2">
-                <div class="surface-head">
-                    <h3>Scenario Simulator</h3>
-                    <span class="lane-label">Chaos Harness</span>
-                </div>
-                <div class="scenario-grid">
-                    <button class="btn-secondary" id="sim-dup">Duplicate Submit</button>
-                    <button class="btn-secondary danger" id="sim-fail">Failing Worker</button>
-                    <button class="btn-secondary caution" id="sim-slow">Slow Worker</button>
-                </div>
-                <div class="scenario-note mono">
-                    Duplicate verifies idempotency, failing worker pushes retries, and slow worker validates lease behavior.
-                </div>
+            <!-- TAB 3: DLQ RECOVERY CENTER -->
+            <section id="tab-dlq" class="tab-page">
+                <article class="surface-card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Dead Letter Queue (DLQ) Operational Recovery</h3>
+                            <p class="section-desc">Manage failed jobs that exceeded max attempt limits. Replay workloads or purge invalid records.</p>
+                        </div>
+                        <div class="btn-group">
+                            <button id="dlq-retry-all" class="btn btn-success">
+                                <span>Retry All DLQ Jobs</span>
+                            </button>
+                            <button id="dlq-purge" class="btn btn-danger">
+                                <span>Purge DLQ</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Queue</th>
+                                    <th>Attempts</th>
+                                    <th>Error Exception Trace</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dlq-body">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No dead-lettered jobs found. System healthy!</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <!-- TAB 4: RESILIENCE SIMULATOR -->
+            <section id="tab-chaos" class="tab-page">
+                <article class="surface-card">
+                    <div class="card-head">
+                        <h3>Distributed System Chaos & Fault Injection</h3>
+                        <span class="badge badge-danger">Resilience Test</span>
+                    </div>
+                    <p class="section-desc">Test Evora's exact-once idempotency, visibility timeout sweeper, and DLQ escalation under simulated failure modes.</p>
+
+                    <div class="chaos-grid">
+                        <div class="chaos-card">
+                            <h4>Idempotency Guard Test</h4>
+                            <p>Submits identical workload twice using matching <code>idempotency_key</code>. Validates 200 OK duplicate rejection.</p>
+                            <button class="btn btn-secondary" id="sim-dup">Run Idempotency Test</button>
+                        </div>
+                        <div class="chaos-card">
+                            <h4>Worker Failure & DLQ Test</h4>
+                            <p>Forces worker to fail processing across max retries. Validates escalation into Dead Letter Queue (DLQ).</p>
+                            <button class="btn btn-danger-soft" id="sim-fail">Run Worker Crash Test</button>
+                        </div>
+                        <div class="chaos-card">
+                            <h4>Visibility Timeout Test</h4>
+                            <p>Simulates hung/crashed worker node. Validates VisibilityTimeoutSweeper background lock recovery.</p>
+                            <button class="btn btn-warning-soft" id="sim-slow">Run Lease Expiration Test</button>
+                        </div>
+                    </div>
+
+                    <div id="sim-log-box" class="log-output font-mono hidden">
+                        <div class="log-title">Chaos Simulation Log:</div>
+                        <pre id="sim-log-content"></pre>
+                    </div>
+                </article>
+            </section>
+
+            <!-- TAB 5: INTEGRATION & SDK HUB -->
+            <section id="tab-integration" class="tab-page">
+                <article class="surface-card">
+                    <div class="card-head">
+                        <h3>Developer Integration & Client SDK Hub</h3>
+                        <span class="tag tag-live">Production Ready</span>
+                    </div>
+                    <p class="section-desc">Integrate Evora into external Java microservices, Spring Boot applications, or HTTP API clients with minimal code.</p>
+
+                    <div class="snippet-tabs">
+                        <button class="snippet-btn active" data-lang="java-sdk">Java Client SDK</button>
+                        <button class="snippet-btn" data-lang="spring-boot">Spring Boot</button>
+                        <button class="snippet-btn" data-lang="curl-api">cURL REST API</button>
+                        <button class="snippet-btn" data-lang="node-sdk">Node.js / TypeScript</button>
+                    </div>
+
+                    <div class="snippet-content">
+                        <!-- Java SDK -->
+                        <div id="snippet-java-sdk" class="code-block active">
+                            <div class="code-head">
+                                <span>Java Client SDK (`com.evora.client`)</span>
+                                <button class="btn-copy" onclick="copySnippet('code-java-sdk')">Copy</button>
+                            </div>
+                            <pre id="code-java-sdk" class="font-mono">
+// 1. Instantiate EvoraClient
+EvoraClient client = EvoraClient.create("http://localhost:8080");
+
+// 2. Submit job to queue
+JobRequest request = JobRequest.builder()
+    .queue("critical")
+    .priority(1)
+    .idempotencyKey("ORDER-9912")
+    .payload("{\"action\": \"PROCESS_PAYMENT\", \"amount\": 149.99}")
+    .build();
+
+Job job = client.enqueue(request);
+
+// 3. Start background worker node
+EvoraWorker worker = EvoraWorker.builder()
+    .client(client)
+    .queue("critical")
+    .concurrency(4)
+    .handler(j -> {
+        System.out.println("Processing job payload: " + j.getPayload());
+        return JobResult.success();
+    })
+    .build();
+
+worker.start();
+                            </pre>
+                        </div>
+
+                        <!-- Spring Boot -->
+                        <div id="snippet-spring-boot" class="code-block">
+                            <div class="code-head">
+                                <span>Spring Boot Integration</span>
+                                <button class="btn-copy" onclick="copySnippet('code-spring-boot')">Copy</button>
+                            </div>
+                            <pre id="code-spring-boot" class="font-mono">
+@Configuration
+public class EvoraConfig {
+    @Bean
+    public EvoraClient evoraClient(@Value("${evora.url}") String evoraUrl) {
+        return EvoraClient.create(evoraUrl);
+    }
+
+    @Bean(destroyMethod = "stop")
+    public EvoraWorker orderWorker(EvoraClient client, OrderService orderService) {
+        EvoraWorker worker = EvoraWorker.builder()
+            .client(client)
+            .queue("orders")
+            .concurrency(4)
+            .handler(job -> {
+                orderService.process(job.getPayload());
+                return JobResult.success();
+            })
+            .build();
+        worker.start();
+        return worker;
+    }
+}
+                            </pre>
+                        </div>
+
+                        <!-- cURL API -->
+                        <div id="snippet-curl-api" class="code-block">
+                            <div class="code-head">
+                                <span>cURL REST API</span>
+                                <button class="btn-copy" onclick="copySnippet('code-curl-api')">Copy</button>
+                            </div>
+                            <pre id="code-curl-api" class="font-mono">
+# Submit Job
+curl -X POST http://localhost:8080/api/v1/jobs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "queue": "critical",
+    "priority": 1,
+    "idempotencyKey": "PAY-8812",
+    "payload": {"action": "DISPATCH", "user_id": "usr-12"}
+  }'
+
+# Poll Job (Worker Node)
+curl -X GET "http://localhost:8080/api/v1/jobs/poll?worker_id=worker-01"
+
+# Complete Job
+curl -X POST http://localhost:8080/api/v1/jobs/{job_id}/complete \
+  -H "Content-Type: application/json" \
+  -d '{"worker_id": "worker-01"}'
+                            </pre>
+                        </div>
+
+                        <!-- Node.js -->
+                        <div id="snippet-node-sdk" class="code-block">
+                            <div class="code-head">
+                                <span>Node.js / TypeScript REST Integration</span>
+                                <button class="btn-copy" onclick="copySnippet('code-node-sdk')">Copy</button>
+                            </div>
+                            <pre id="code-node-sdk" class="font-mono">
+import axios from 'axios';
+
+const EVORA_URL = 'http://localhost:8080/api/v1';
+
+// Enqueue Job
+async function enqueueJob(queue, payload, idempotencyKey) {
+  const { data } = await axios.post(`${EVORA_URL}/jobs`, {
+    queue,
+    priority: 1,
+    idempotencyKey,
+    payload
+  });
+  return data;
+}
+
+// Poll & Process Worker Loop
+async function startWorker(workerId) {
+  while (true) {
+    try {
+      const res = await axios.get(`${EVORA_URL}/jobs/poll?worker_id=${workerId}`);
+      const job = res.data;
+      console.log('Processing job:', job.id);
+      await axios.post(`${EVORA_URL}/jobs/${job.id}/complete`, { worker_id: workerId });
+    } catch (err) {
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+}
+                            </pre>
+                        </div>
+                    </div>
+                </article>
             </section>
         </main>
+    </div>
+
+    <!-- Job Payload Modal -->
+    <div id="job-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-head">
+                <h3 id="modal-title">Job Details</h3>
+                <button id="modal-close" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-field">
+                    <label>Job ID:</label>
+                    <span id="modal-job-id" class="font-mono text-cyan"></span>
+                </div>
+                <div class="modal-field">
+                    <label>Payload JSON:</label>
+                    <pre id="modal-payload" class="font-mono code-box"></pre>
+                </div>
+                <div class="modal-field">
+                    <label>Last Error Trace:</label>
+                    <pre id="modal-error" class="font-mono code-box text-danger"></pre>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>

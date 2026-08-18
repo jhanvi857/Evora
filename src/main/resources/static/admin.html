@@ -2,73 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evora Telemetry Portal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <meta http-equiv="refresh" content="0; url=index.html">
+    <title>Redirecting to Evora Control Console...</title>
 </head>
-<body>
-    <div class="aurora-bg"></div>
-    <div class="grain-overlay"></div>
-
-    <div class="app-shell">
-        <aside class="app-sidebar">
-            <div class="brand-block">
-                <div class="brand-mark">E</div>
-                <div>
-                    <h1 class="brand-title">Evora</h1>
-                    <p class="brand-subtitle">Event-Driven Queue Fabric</p>
-                </div>
-            </div>
-            <nav class="nav-links">
-                <a href="index.html" class="nav-item">Queue Console</a>
-                <a href="admin.html" class="nav-item active">Telemetry</a>
-            </nav>
-            <div class="sidebar-note">
-                <p>Queue health, DLQ recovery, and system visibility for operators.</p>
-            </div>
-        </aside>
-
-        <main class="page-main">
-            <header class="page-header">
-                <div>
-                    <p class="eyebrow">Operations</p>
-                    <h2>Queue Telemetry Dashboard</h2>
-                    <p class="header-copy">Monitor lane pressure and recover dead-lettered jobs directly from this panel.</p>
-                </div>
-                <button id="refresh-telemetry" class="btn-secondary">Refresh now</button>
-            </header>
-
-            <section class="dashboard-grid telemetry-grid" id="stats-grid"></section>
-
-            <section class="surface-card reveal delayed-1">
-                <div class="surface-head">
-                    <h3>Dead Letter Queue</h3>
-                    <span class="lane-label danger">Recovery</span>
-                </div>
-
-                <table class="telemetry-table">
-                    <thead>
-                        <tr>
-                            <th>Job ID</th>
-                            <th>Queue</th>
-                            <th>Attempts</th>
-                            <th>Last Error</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dlq-body">
-                        <tr>
-                            <td colspan="5" class="empty-cell">Loading DLQ records...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </section>
-        </main>
-    </div>
-
-    <script src="admin-script.js"></script>
+<body style="background: #0b0f19; color: #f3f4f6; font-family: sans-serif; text-align: center; padding-top: 50px;">
+    <p>Redirecting to unified <a href="index.html" style="color: #06b6d4;">Evora Operations Dashboard</a>...</p>
 </body>
 </html>
