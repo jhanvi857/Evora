@@ -225,19 +225,6 @@ Open **`http://localhost:8080`** in your browser to view the Single-Page Control
 | **Choreographed Sagas** | **Built-in Compensations** | None | None | Step Functions ($$$) |
 | **Event Sourcing Audit** | **Append-Only Store** | None (Ephemeral) | None (Ephemeral) | None |
 
----
-
-<<<<<<< Updated upstream
-## Resume Bullet Points (Copy directly for CV)
-
-> **Distributed Systems & Backend Engineer | Project: Evora (Distributed Job Queue)**
-> - Designed and built **Evora**, a high-throughput distributed job queue engine in Java 17 using **PostgreSQL `FOR UPDATE SKIP LOCKED`**, eliminating Redis/RabbitMQ operational overhead while guaranteeing lock-free worker polling across 100+ concurrent nodes.
-> - Developed a lightweight **Java Client SDK (`com.evora.client`)** featuring thread-safe HTTP connection pooling, automated background lease heartbeat renewals, exponential backoff retries, and graceful shutdown hooks for 1-line integration into external Spring Boot microservices.
-> - Implemented **CQRS and Event Sourcing** architecture to project domain events into MongoDB, reducing read contention on PostgreSQL and delivering sub-2ms telemetry query responses.
-> - Built a real-time **Single-Page Operations Console** featuring Chart.js throughput graphs, active queue breakdown, dead-letter queue (DLQ) recovery tools, and an interactive distributed chaos simulator.
-> - Architected a dedicated **Next.js 14 Documentation Website** with Tailwind CSS, dark orange theme (`#f97316`), interactive search overlay (`Ctrl+K`), and Fumadocs-inspired layout.
-=======
 ## License
 
 Evora is open-source software licensed under the [MIT License](LICENSE).
->>>>>>> Stashed changes
