@@ -14,7 +14,7 @@ export function renderMarkdownContent(content: string): React.ReactNode[] {
     // 1. Code Block parsing
     if (line.trim().startsWith("```")) {
       const lang = line.trim().replace("```", "").trim() || "bash";
-      const codeLines: String[] = [];
+      const codeLines: string[] = [];
       i++;
       while (i < lines.length && !lines[i].trim().startsWith("```")) {
         codeLines.push(lines[i]);
@@ -22,7 +22,7 @@ export function renderMarkdownContent(content: string): React.ReactNode[] {
       }
       i++; // skip closing ```
       elements.push(
-        <div key={`code-wrap-${keyIndex++}`} className="my-7 sm:my-8">
+        <div key={`code-wrap-${keyIndex++}`} className="my-6 sm:my-7">
           <CodeBlock
             language={lang}
             code={codeLines.join("\n")}
@@ -51,30 +51,26 @@ export function renderMarkdownContent(content: string): React.ReactNode[] {
         const bodyRows = tableLines.slice(2).map(parseRow);
 
         elements.push(
-          <div key={`table-${keyIndex++}`} className="my-8 overflow-x-auto">
-            <table className="w-full text-left text-sm border-separate border-spacing-y-2.5">
+          <div key={`table-${keyIndex++}`} className="my-7 overflow-x-auto rounded-lg border border-borderColor bg-[#0b0a0b]">
+            <table className="w-full text-left text-xs sm:text-sm font-mono border-collapse">
               <thead>
-                <tr>
+                <tr className="bg-[#141214] border-b border-borderColor">
                   {headerCols.map((col, colIdx) => (
                     <th
                       key={colIdx}
-                      className="px-5 py-3 font-semibold font-mono text-xs uppercase tracking-wider text-orange-400 border-b border-[#27272a] pb-3"
+                      className="px-4 py-3 font-semibold text-xs uppercase tracking-wider text-brandActiveCursor"
                       dangerouslySetInnerHTML={{ __html: formatInline(col) }}
                     />
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#1e1919]">
                 {bodyRows.map((row, rowIdx) => (
-                  <tr key={rowIdx} className="bg-[#121215] hover:bg-[#1c1c21] transition-colors">
+                  <tr key={rowIdx} className="hover:bg-[#181414] transition-colors">
                     {row.map((cell, cellIdx) => (
                       <td
                         key={cellIdx}
-                        className={`px-5 py-4 text-zinc-200 text-sm sm:text-[15px] leading-relaxed border-y border-[#27272a] ${
-                          cellIdx === 0 ? "border-l rounded-l-xl" : ""
-                        } ${
-                          cellIdx === row.length - 1 ? "border-r rounded-r-xl" : ""
-                        }`}
+                        className="px-4 py-3 text-textMain text-xs sm:text-[13px] leading-relaxed"
                         dangerouslySetInnerHTML={{ __html: formatInline(cell) }}
                       />
                     ))}
@@ -89,11 +85,22 @@ export function renderMarkdownContent(content: string): React.ReactNode[] {
     }
 
     // 3. Headings
+    if (line.startsWith("# ")) {
+      const text = line.replace("# ", "").trim();
+      elements.push(
+        <h1 key={`h1-${keyIndex++}`} className="font-display font-bold text-2xl sm:text-3xl text-textMain mt-8 mb-4 tracking-tight">
+          {text}
+        </h1>
+      );
+      i++;
+      continue;
+    }
+
     if (line.startsWith("## ")) {
       const text = line.replace("## ", "").trim();
       const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       elements.push(
-        <h2 key={`h2-${keyIndex++}`} id={id} className="font-display font-bold text-xl sm:text-2xl text-white mt-12 sm:mt-14 mb-4 pt-6 pb-3 border-b border-[#27272a] tracking-tight">
+        <h2 key={`h2-${keyIndex++}`} id={id} className="font-display font-semibold text-xl sm:text-2xl text-textMain mt-12 mb-3.5 pt-4 pb-2 border-b border-borderColor tracking-tight">
           {text}
         </h2>
       );
@@ -105,7 +112,7 @@ export function renderMarkdownContent(content: string): React.ReactNode[] {
       const text = line.replace("### ", "").trim();
       const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       elements.push(
-        <h3 key={`h3-${keyIndex++}`} id={id} className="font-display font-semibold text-lg sm:text-xl text-zinc-100 mt-8 sm:mt-10 mb-3 pt-2 tracking-tight">
+        <h3 key={`h3-${keyIndex++}`} id={id} className="font-sans font-semibold text-base sm:text-lg text-textMain mt-8 mb-2.5 tracking-tight">
           {text}
         </h3>
       );
@@ -114,14 +121,14 @@ export function renderMarkdownContent(content: string): React.ReactNode[] {
     }
 
     // 4. Bullet lists
-    if (line.trim().startsWith("- ")) {
+    if (line.trim().startsWith("* ") || line.trim().startsWith("- ")) {
       const listItems: string[] = [];
-      while (i < lines.length && lines[i].trim().startsWith("- ")) {
-        listItems.push(lines[i].trim().replace("- ", ""));
+      while (i < lines.length && (lines[i].trim().startsWith("* ") || lines[i].trim().startsWith("- "))) {
+        listItems.push(lines[i].trim().replace(/^[\*\-]\s+/, ""));
         i++;
       }
       elements.push(
-        <ul key={`ul-${keyIndex++}`} className="list-disc pl-6 space-y-2.5 my-5 sm:my-6 text-sm sm:text-base text-zinc-300 leading-relaxed sm:leading-7">
+        <ul key={`ul-${keyIndex++}`} className="list-disc pl-5 space-y-2 my-5 text-sm sm:text-[14.5px] text-textMuted leading-relaxed">
           {listItems.map((item, itemIdx) => (
             <li key={itemIdx} className="pl-1" dangerouslySetInnerHTML={{ __html: formatInline(item) }} />
           ))}
@@ -133,7 +140,7 @@ export function renderMarkdownContent(content: string): React.ReactNode[] {
     // 5. Paragraph
     if (line.trim().length > 0 && !line.startsWith("#")) {
       elements.push(
-        <p key={`p-${keyIndex++}`} className="text-sm sm:text-base text-zinc-300 leading-relaxed sm:leading-7 my-5 sm:my-6" dangerouslySetInnerHTML={{ __html: formatInline(line) }} />
+        <p key={`p-${keyIndex++}`} className="text-sm sm:text-[14.5px] text-textMuted leading-relaxed sm:leading-7 my-4" dangerouslySetInnerHTML={{ __html: formatInline(line) }} />
       );
     }
 
@@ -145,6 +152,6 @@ export function renderMarkdownContent(content: string): React.ReactNode[] {
 
 function formatInline(str: string): string {
   return str
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
-    .replace(/`(.*?)`/g, '<code class="text-[#fdba74] bg-[#18181b] border border-[#27272a] px-1.5 py-0.5 rounded font-mono text-xs sm:text-[13px] font-normal">$1</code>');
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-textMain font-semibold">$1</strong>')
+    .replace(/`(.*?)`/g, '<code class="text-brandActiveCursor bg-[#161314] border border-borderColor px-1.5 py-0.5 rounded font-mono text-xs font-normal">$1</code>');
 }

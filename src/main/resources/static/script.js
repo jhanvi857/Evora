@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewTitle = document.getElementById('tab-title');
 
         const headers = {
-            'tab-overview': { eyebrow: 'Production Metrics', title: 'System Overview & Telemetry' },
+            'tab-overview': { eyebrow: ' Metrics', title: 'System Overview & Telemetry' },
             'tab-queue': { eyebrow: 'Control Plane', title: 'Live Queue & Workload Dispatcher' },
             'tab-dlq': { eyebrow: 'Operator Tools', title: 'Dead Letter Queue (DLQ) Recovery' },
             'tab-chaos': { eyebrow: 'Resilience Testing', title: 'Distributed Chaos Simulator' },
@@ -96,8 +96,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     datasets: [{
                         label: 'Processed Jobs / sec',
                         data: [0, 2, 5, 8, 4, 12, 6],
-                        borderColor: '#06b6d4',
-                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        borderColor: '#c85a32',
+                        backgroundColor: 'rgba(200, 90, 50, 0.15)',
                         fill: true,
                         tension: 0.4
                     }]
@@ -107,8 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' }, beginAtZero: true }
+                        x: { grid: { color: 'rgba(40, 35, 34, 0.6)' }, ticks: { color: '#8f837c', font: { family: 'JetBrains Mono', size: 10 } } },
+                        y: { grid: { color: 'rgba(40, 35, 34, 0.6)' }, ticks: { color: '#8f837c', font: { family: 'JetBrains Mono', size: 10 } }, beginAtZero: true }
                     }
                 }
             });
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     labels: ['Pending', 'Running', 'Completed', 'DLQ'],
                     datasets: [{
                         data: [0, 0, 0, 0],
-                        backgroundColor: ['#06b6d4', '#f59e0b', '#10b981', '#ef4444'],
+                        backgroundColor: ['#8f837c', '#e8845e', '#4ea674', '#d94d43'],
                         borderWidth: 0
                     }]
                 },
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 11 } } }
+                        legend: { position: 'bottom', labels: { color: '#8f837c', font: { family: 'JetBrains Mono', size: 11 } } }
                     }
                 }
             });

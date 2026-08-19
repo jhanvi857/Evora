@@ -4,23 +4,35 @@ import Callout from "@/components/Callout";
 import { renderMarkdownContent } from "@/lib/parse-markdown";
 
 export default function DocsPage() {
-  const doc = DOC_CONTENT["getting-started"];
+  const doc = DOC_CONTENT["lock-mechanics"];
 
   return (
     <div className="flex gap-8 lg:gap-12">
       <article className="flex-1 min-w-0">
-        <div className="mb-8 border-b border-[#27272a] pb-6">
-          <span className="text-xs font-mono text-brandPrimary uppercase tracking-wider font-semibold">
+        {/* Technical Monospace Breadcrumb Bar */}
+        <div className="mb-6 pb-2 border-b border-[#211d1c] text-[10.5px] font-mono text-textMuted flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-brandActiveCursor">SYS_CORE</span>
+            <span>//</span>
+            <span>{doc.category.toUpperCase()}</span>
+            <span>//</span>
+            <span className="text-textMain">{doc.slug.toUpperCase()}</span>
+          </div>
+          <span className="hidden sm:inline-block text-[#524540]">STATUS: VERIFIED</span>
+        </div>
+
+        <div className="mb-8 border-b border-borderColor pb-6">
+          <span className="text-xs font-mono text-brandActiveCursor uppercase tracking-wider font-semibold">
             {doc.category}
           </span>
           <h1 className="text-3xl sm:text-4xl font-bold font-display text-white mt-1.5 tracking-tight">
             {doc.title}
           </h1>
-          <p className="text-zinc-300 text-base sm:text-lg mt-3 leading-relaxed">{doc.description}</p>
+          <p className="text-textMuted text-sm sm:text-base mt-2.5 leading-relaxed font-sans">{doc.description}</p>
         </div>
 
-        <Callout type="info" title="Production Ready">
-          Evora uses PostgreSQL native <code className="text-[#fdba74] bg-[#18181b] border border-[#27272a] px-1.5 py-0.5 rounded font-mono text-xs sm:text-[13px]">FOR UPDATE SKIP LOCKED</code> to provide lock-free job reservation across 100+ parallel worker nodes.
+        <Callout type="warning" title="PostgreSQL Lock-Free Guarantee">
+          Combining <code className="text-brandActiveCursor bg-[#141214] border border-borderColor px-1 py-0.5 rounded font-mono text-xs">FOR UPDATE SKIP LOCKED</code> with the partial index <code className="text-brandActiveCursor bg-[#141214] border border-borderColor px-1 py-0.5 rounded font-mono text-xs">idx_jobs_poll</code> guarantees zero thread contention across any number of parallel workers.
         </Callout>
 
         <div className="mt-6">

@@ -5,160 +5,188 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import SearchModal from "@/components/SearchModal";
 import CodeBlock from "@/components/CodeBlock";
-import { ArrowRight, Terminal, Shield, Zap, Database, Cpu, Layers } from "lucide-react";
+import SkipLockedSimulator from "@/components/SkipLockedSimulator";
+import { ArrowRight, Terminal, Zap, Database, Layers, GitFork } from "lucide-react";
 
 export default function LandingPage() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-zinc-100 flex flex-col">
+    <div className="min-h-screen bg-bgBase text-textMain flex flex-col">
       <Navbar onOpenSearch={() => setIsSearchOpen(true)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
-          <div className="inline-flex items-center gap-2 bg-[#121215] border border-[#27272a] px-3.5 py-1.5 rounded-full text-xs text-zinc-300 mb-8">
-            <span className="w-2 h-2 rounded-full bg-brandSuccess"></span>
-            <span>Evora v1.0.0 is Live & Ready for Production</span>
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 text-center">
+          {/* Top Engine Status Monospace Banner */}
+          <div className="inline-flex items-center gap-2 bg-[#141214] border border-borderColor px-3.5 py-1.5 rounded text-[11px] font-mono text-textMuted mb-8 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-stateSuccess"></span>
+            <span>WAL_EPOCH: 0x4F</span>
+            <span className="text-[#3d3330]">|</span>
+            <span className="text-brandActiveCursor font-medium">FOR UPDATE SKIP LOCKED</span>
+            <span className="text-[#3d3330]">|</span>
+            <span>POSTGRESQL 15+ NATIVE</span>
           </div>
 
-          <h1 className="font-display text-4xl sm:text-6xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-tight">
-            The Lock-Free Distributed Job Queue Engine for PostgreSQL.
+          <h1 className="font-display text-4xl sm:text-6xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-[1.15]">
+            The Lock-Free Workload Fabric for PostgreSQL.
           </h1>
 
-          <p className="mt-6 text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto font-sans leading-relaxed">
-            Eliminate Redis and RabbitMQ operational overhead. Execute atomic, lock-free queue polling using PostgreSQL native <code className="text-brandPrimary bg-[#18181b] px-1.5 py-0.5 rounded font-mono text-sm">FOR UPDATE SKIP LOCKED</code>.
+          <p className="mt-6 text-base sm:text-lg text-textMuted max-w-2xl mx-auto font-sans leading-relaxed">
+            Eliminate Redis and RabbitMQ operational overhead. Execute atomic, non-blocking queue polling, transactional outbox relays, and choreographed sagas inside your existing database.
           </p>
 
           {/* CTA Buttons */}
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 font-mono text-xs">
             <Link
               href="/docs"
-              className="w-full sm:w-auto bg-brandPrimary hover:bg-brandPrimaryHover text-white font-semibold px-6 py-3 rounded-md text-sm flex items-center justify-center gap-2 transition"
+              className="w-full sm:w-auto bg-brandAccent hover:bg-brandAccentHover text-white font-bold px-6 py-3 rounded flex items-center justify-center gap-2 transition shadow-md"
             >
-              <span>Get Started</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>EXPLORE ARCHITECTURE</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
 
             <a
               href="http://localhost:8080"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto bg-[#18181b] border border-[#27272a] hover:border-zinc-500 text-zinc-200 font-semibold px-6 py-3 rounded-md text-sm flex items-center justify-center gap-2 transition"
+              className="w-full sm:w-auto bg-[#141214] border border-borderColor hover:border-brandAccent text-textMain font-semibold px-6 py-3 rounded flex items-center justify-center gap-2 transition"
             >
-              <Terminal className="w-4 h-4 text-brandSuccess" />
-              <span>Launch Operations Console</span>
+              <Terminal className="w-3.5 h-3.5 text-stateSuccess" />
+              <span>LAUNCH OPERATIONS CONSOLE</span>
             </a>
           </div>
 
-          {/* Quick Terminal Code Box */}
-          <div className="mt-14 max-w-2xl mx-auto text-left">
-            <CodeBlock
-              filename="Terminal Quickstart"
-              language="bash"
-              code={`# 1. Start PostgreSQL & MongoDB infrastructure
-docker-compose up -d
-
-# 2. Run Evora Distributed Queue Engine
-mvn clean compile exec:java -Dexec.mainClass="com.evora.EvoraApplication"
-
-# 3. Run Runnable Client SDK Demo
-mvn exec:java -Dexec.mainClass="com.evora.demo.EvoraWorkerDemo"`}
-            />
+          {/* Signature Interactive Centerpiece: SKIP LOCKED Simulator */}
+          <div className="mt-14 max-w-4xl mx-auto text-left">
+            <div className="mb-3 flex items-center justify-between text-xs font-mono text-textMuted">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-brandAccent animate-pulse"></span>
+                <span>SIGNATURE ENGINE SIMULATOR</span>
+              </span>
+              <span>INTERACTIVE // CLICK ACTION BUTTONS BELOW</span>
+            </div>
+            <SkipLockedSimulator />
           </div>
         </section>
 
-        {/* Feature Cards Section */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-[#27272a]">
+        {/* 4 Core Distributed Architecture Pillars */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-borderColor">
           <div className="text-center mb-12">
-            <h2 className="font-display text-2xl sm:text-3xl font-bold text-white">
-              Built for Enterprise Reliability & Scalability
+            <div className="text-[11px] font-mono uppercase text-brandActiveCursor font-semibold tracking-wider">
+              CORE SYSTEM CAPABILITIES
+            </div>
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-white mt-1">
+              Built on Database Internals & Immutable Logs
             </h2>
-            <p className="text-zinc-400 text-sm mt-2">
-              Everything you need for multi-project background processing without broker complexity.
+            <p className="text-textMuted text-xs sm:text-sm mt-2 max-w-xl mx-auto">
+              Everything required for multi-tenant distributed execution without distributed dual-write hazards.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#121215] border border-[#27272a] p-6 rounded-lg">
-              <div className="w-10 h-10 bg-[#1c1c21] border border-[#27272a] rounded flex items-center justify-center text-brandPrimary mb-4">
-                <Zap className="w-5 h-5" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="bg-[#121010] border border-borderColor p-5 rounded">
+              <div className="w-8 h-8 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-brandActiveCursor mb-3 font-mono">
+                <Zap className="w-4 h-4" />
               </div>
-              <h3 className="font-display font-semibold text-lg text-white mb-2">
-                FOR UPDATE SKIP LOCKED
+              <h3 className="font-display font-semibold text-base text-white mb-1.5">
+                SKIP LOCKED
               </h3>
-              <p className="text-zinc-400 text-xs leading-relaxed">
-                Atomic, lock-free row reservation across 100+ concurrent worker nodes. Zero thread blocking or table locks under high load.
+              <p className="text-textMuted text-xs leading-relaxed">
+                Non-blocking concurrent tuple reservations across 100+ worker threads with zero lock serialization.
               </p>
             </div>
 
-            <div className="bg-[#121215] border border-[#27272a] p-6 rounded-lg">
-              <div className="w-10 h-10 bg-[#1c1c21] border border-[#27272a] rounded flex items-center justify-center text-brandSuccess mb-4">
-                <Cpu className="w-5 h-5" />
+            <div className="bg-[#121010] border border-borderColor p-5 rounded">
+              <div className="w-8 h-8 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-stateSuccess mb-3 font-mono">
+                <Database className="w-4 h-4" />
               </div>
-              <h3 className="font-display font-semibold text-lg text-white m-4">
-                Lightweight Java SDK
+              <h3 className="font-display font-semibold text-base text-white mb-1.5">
+                Transactional Outbox
               </h3>
-              <p className="text-zinc-400 text-xs leading-relaxed">
-                Enqueue and process tasks with multi-threaded workers (<code className="text-zinc-300">EvoraWorker</code>), automated background heartbeats, and error retries.
+              <p className="text-textMuted text-xs leading-relaxed">
+                Enqueue tasks in the exact same SQL transaction as your business records. 100% dual-write proof.
               </p>
             </div>
 
-            <div className="bg-[#121215] border border-[#27272a] p-6 rounded-lg">
-              <div className="w-10 h-10 bg-[#1c1c21] border border-[#27272a] rounded flex items-center justify-center text-brandWarning mb-4">
-                <Shield className="w-5 h-5" />
+            <div className="bg-[#121010] border border-borderColor p-5 rounded">
+              <div className="w-8 h-8 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-[#e29377] mb-3 font-mono">
+                <Layers className="w-4 h-4" />
               </div>
-              <h3 className="font-display font-semibold text-lg text-white mb-2">
-                Visibility Timeout Sweeper
+              <h3 className="font-display font-semibold text-base text-white mb-1.5">
+                CQRS Projections
               </h3>
-              <p className="text-zinc-400 text-xs leading-relaxed">
-                Lease-based worker crash detection automatically re-queues expired jobs or escalates them to the Dead Letter Queue (DLQ).
+              <p className="text-textMuted text-xs leading-relaxed">
+                PostgreSQL write engine decoupled from MongoDB read telemetry models for zero-contention dashboards.
               </p>
             </div>
 
-            <div className="bg-[#121215] border border-[#27272a] p-6 rounded-lg">
-              <div className="w-10 h-10 bg-[#1c1c21] border border-[#27272a] rounded flex items-center justify-center text-brandBulk mb-4">
-                <Database className="w-5 h-5" />
+            <div className="bg-[#121010] border border-borderColor p-5 rounded">
+              <div className="w-8 h-8 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-stateWarning mb-3 font-mono">
+                <GitFork className="w-4 h-4" />
               </div>
-              <h3 className="font-display font-semibold text-lg text-white mb-2">
-                CQRS & Event Sourcing
+              <h3 className="font-display font-semibold text-base text-white mb-1.5">
+                Choreographed Sagas
               </h3>
-              <p className="text-zinc-400 text-xs leading-relaxed">
-                Separates operational queue transactions (PostgreSQL) from analytical monitoring queries (MongoDB event projections).
+              <p className="text-textMuted text-xs leading-relaxed">
+                Multi-step distributed transactions with automated reverse compensating rollbacks upon step failure.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Quickstart Terminal Section */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-borderColor">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="font-display text-2xl font-bold text-white">
+                5-Minute  Quickstart
+              </h2>
+              <p className="text-textMuted text-xs mt-1">
+                Launch the PostgreSQL/MongoDB cluster and run the multi-threaded Java Client SDK demo.
               </p>
             </div>
 
-            <div className="bg-[#121215] border border-[#27272a] p-6 rounded-lg">
-              <div className="w-10 h-10 bg-[#1c1c21] border border-[#27272a] rounded flex items-center justify-center text-brandDanger mb-4">
-                <Layers className="w-5 h-5" />
-              </div>
-              <h3 className="font-display font-semibold text-lg text-white mb-2">
-                Spring Boot Starter
-              </h3>
-              <p className="text-zinc-400 text-xs leading-relaxed">
-                Drop <code className="text-zinc-300">EvoraClient</code> and <code className="text-zinc-300">EvoraWorker</code> into Spring Boot applications with standard <code className="text-zinc-300">@Bean</code> configuration.
-              </p>
-            </div>
+            <CodeBlock
+              filename="Terminal Quickstart"
+              language="bash"
+              code={`# 1. Launch PostgreSQL & MongoDB cluster
+docker-compose up -d
 
-            <div className="bg-[#121215] border border-[#27272a] p-6 rounded-lg">
-              <div className="w-10 h-10 bg-[#1c1c21] border border-[#27272a] rounded flex items-center justify-center text-brandPrimary mb-4">
-                <Terminal className="w-5 h-5" />
-              </div>
-              <h3 className="font-display font-semibold text-lg text-white mb-2">
-                Real-Time Control Plane
-              </h3>
-              <p className="text-zinc-400 text-xs leading-relaxed">
-                Single-Page Console featuring live throughput area graphs, status distribution doughnut charts, and DLQ recovery tools.
-              </p>
-            </div>
+# 2. Compile & start Evora Distributed Queue Engine
+mvn clean compile exec:java -Dexec.mainClass="com.evora.EvoraApplication"
+
+# 3. Run multi-threaded Client SDK worker demo
+mvn exec:java -Dexec.mainClass="com.evora.demo.EvoraWorkerDemo"`}
+            />
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#27272a] bg-[#0a0a0c] py-8 text-center text-xs text-zinc-500 font-mono">
-        <p>Evora Distributed Job Queue Fabric &bull; Released under MIT License</p>
+      <footer className="border-t border-borderColor py-8 bg-[#070607] text-xs font-mono text-textMuted">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <span>EVORA WORKLOAD FABRIC // POSTGRESQL FOR UPDATE SKIP LOCKED</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/docs" className="hover:text-brandActiveCursor transition">
+              Documentation
+            </Link>
+            <Link href="/docs/api-reference" className="hover:text-brandActiveCursor transition">
+              REST API
+            </Link>
+            <a
+              href="https://github.com/jhanvi857/Evora"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-brandActiveCursor transition"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
       </footer>
     </div>
   );

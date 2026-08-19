@@ -13,7 +13,7 @@ export default function DocsLayout({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-zinc-100 flex flex-col antialiased">
+    <div className="min-h-screen bg-bgBase text-textMain flex flex-col antialiased">
       <Navbar onOpenSearch={() => setIsSearchOpen(true)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 

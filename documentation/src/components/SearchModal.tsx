@@ -41,29 +41,29 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-start justify-center pt-20 px-4">
-      <div className="bg-[#121215] border border-[#27272a] rounded-lg w-full max-w-xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-start justify-center pt-20 px-4">
+      <div className="bg-[#141214] border border-borderColor rounded-lg w-full max-w-xl shadow-2xl overflow-hidden">
         {/* Search Header */}
-        <div className="flex items-center px-4 border-b border-[#27272a]">
-          <Search className="w-4 h-4 text-zinc-400 shrink-0" />
+        <div className="flex items-center px-4 border-b border-borderColor bg-[#0a090a]">
+          <Search className="w-4 h-4 text-brandAccent shrink-0" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search documentation topics, API routes, SDK..."
-            className="w-full bg-transparent text-white px-3 py-3 text-sm focus:outline-none placeholder-zinc-500 font-sans"
+            placeholder="Search WAL mechanics, Spring Boot, Sagas, DLQ..."
+            className="w-full bg-transparent text-textMain px-3 py-3 text-sm focus:outline-none placeholder-[#6b5f59] font-mono text-xs"
             autoFocus
           />
-          <button onClick={onClose} className="text-zinc-500 hover:text-white p-1">
+          <button onClick={onClose} className="text-textMuted hover:text-textMain p-1">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Results List */}
-        <div className="max-h-80 overflow-y-auto p-2 divide-y divide-[#18181b]">
+        <div className="max-h-80 overflow-y-auto p-2 divide-y divide-[#1f1b1a]">
           {results.length === 0 ? (
-            <p className="p-4 text-center text-xs text-zinc-500">
-              No documentation matches found for &quot;{query}&quot;
+            <p className="p-4 text-center text-xs text-textMuted font-mono">
+              NO MATCHES FOUND FOR &quot;{query}&quot;
             </p>
           ) : (
             results.map((doc) => (
@@ -71,23 +71,23 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 key={doc.id}
                 href={`/docs/${doc.slug}`}
                 onClick={onClose}
-                className="group flex items-center justify-between p-3 rounded hover:bg-[#1c1c21] transition"
+                className="group flex items-center justify-between p-3 rounded hover:bg-[#1f1b1a] transition"
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <BookOpen className="w-3.5 h-3.5 text-brandPrimary" />
-                    <span className="text-sm font-medium text-zinc-200 group-hover:text-white">
+                    <BookOpen className="w-3.5 h-3.5 text-brandAccent" />
+                    <span className="text-sm font-medium text-textMain group-hover:text-brandActiveCursor">
                       {doc.title}
                     </span>
-                    <span className="text-[10px] bg-[#18181b] border border-[#27272a] text-zinc-400 px-1.5 py-0.5 rounded font-mono">
+                    <span className="text-[10px] bg-[#09090b] border border-borderColor text-textMuted px-1.5 py-0.5 rounded font-mono">
                       {doc.category}
                     </span>
                   </div>
-                  <p className="text-xs text-zinc-400 mt-1 line-clamp-1">
+                  <p className="text-xs text-textMuted mt-1 line-clamp-1 font-sans">
                     {doc.description}
                   </p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-brandPrimary opacity-0 group-hover:opacity-100 transition" />
+                <ArrowRight className="w-4 h-4 text-[#5c4f49] group-hover:text-brandActiveCursor opacity-0 group-hover:opacity-100 transition" />
               </Link>
             ))
           )}

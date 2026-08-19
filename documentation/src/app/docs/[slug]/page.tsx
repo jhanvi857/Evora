@@ -24,31 +24,49 @@ export default function DocSlugPage({ params }: DocSlugPageProps) {
   return (
     <div className="flex gap-8 lg:gap-12">
       <article className="flex-1 min-w-0">
-        <div className="mb-8 border-b border-[#27272a] pb-6">
-          <span className="text-xs font-mono text-brandPrimary uppercase tracking-wider font-semibold">
+        {/* Technical Monospace Breadcrumb Bar */}
+        <div className="mb-6 pb-2 border-b border-[#211d1c] text-[10.5px] font-mono text-textMuted flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-brandActiveCursor">SYS_CORE</span>
+            <span>//</span>
+            <span>{doc.category.toUpperCase()}</span>
+            <span>//</span>
+            <span className="text-textMain">{doc.slug.toUpperCase()}</span>
+          </div>
+          <span className="hidden sm:inline-block text-[#524540]">STATUS: VERIFIED</span>
+        </div>
+
+        <div className="mb-8 border-b border-borderColor pb-6">
+          <span className="text-xs font-mono text-brandActiveCursor uppercase tracking-wider font-semibold">
             {doc.category}
           </span>
           <h1 className="text-3xl sm:text-4xl font-bold font-display text-white mt-1.5 tracking-tight">
             {doc.title}
           </h1>
-          <p className="text-zinc-300 text-base sm:text-lg mt-3 leading-relaxed">{doc.description}</p>
+          <p className="text-textMuted text-sm sm:text-base mt-2.5 leading-relaxed font-sans">{doc.description}</p>
         </div>
 
         {params.slug === "lock-mechanics" && (
-          <Callout type="warning" title="Idempotency Guarantee">
-            Enforcing a UNIQUE constraint on <code className="text-[#fdba74] bg-[#18181b] border border-[#27272a] px-1.5 py-0.5 rounded font-mono text-xs sm:text-[13px]">idempotency_key</code> guarantees exact-once processing. Duplicate submissions safely return the existing record.
+          <Callout type="warning" title="PostgreSQL Lock-Free Guarantee">
+            Combining <code className="text-brandActiveCursor bg-[#141214] border border-borderColor px-1 py-0.5 rounded font-mono text-xs">FOR UPDATE SKIP LOCKED</code> with the partial index <code className="text-brandActiveCursor bg-[#141214] border border-borderColor px-1 py-0.5 rounded font-mono text-xs">idx_jobs_poll</code> guarantees zero thread contention across any number of parallel workers.
           </Callout>
         )}
 
-        {params.slug === "sweeper" && (
+        {params.slug === "transactional-outbox" && (
+          <Callout type="info" title="Dual-Write Immunity">
+            Enqueuing via <code className="text-brandActiveCursor bg-[#141214] border border-borderColor px-1 py-0.5 rounded font-mono text-xs">transactional_outbox</code> inside your business SQL transaction guarantees that background tasks never get dropped if an external broker fails.
+          </Callout>
+        )}
+
+        {params.slug === "sweeper-leases" && (
           <Callout type="info" title="Background Lease Monitoring">
-            The VisibilityTimeoutSweeper runs every 10 seconds to recover jobs from worker nodes that crashed without renewing their lease.
+            The <code className="text-brandActiveCursor bg-[#141214] border border-borderColor px-1 py-0.5 rounded font-mono text-xs">VisibilityTimeoutSweeper</code> runs every 10 seconds to recover hanging jobs from crashed worker nodes.
           </Callout>
         )}
 
         {params.slug === "spring-boot" && (
-          <Callout type="success" title="Spring Boot Ready">
-            Specify <code className="text-[#fdba74] bg-[#18181b] border border-[#27272a] px-1.5 py-0.5 rounded font-mono text-xs sm:text-[13px]">destroyMethod = &quot;stop&quot;</code> on worker beans for clean application shutdown.
+          <Callout type="success" title="Spring Boot  Lifecycle">
+            Specify <code className="text-brandActiveCursor bg-[#141214] border border-borderColor px-1 py-0.5 rounded font-mono text-xs">destroyMethod = &quot;stop&quot;</code> on <code className="text-brandActiveCursor bg-[#141214] border border-borderColor px-1 py-0.5 rounded font-mono text-xs">EvoraWorker</code> beans for clean rolling deployment drains.
           </Callout>
         )}
 
