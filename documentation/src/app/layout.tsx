@@ -1,14 +1,30 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const space = Space_Grotesk({ subsets: ["latin"], variable: "--font-space" });
-const mono = JetBrains_Mono({ weight: ["400", "500"], subsets: ["latin"], variable: "--font-mono" });
+const sans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  axes: ["opsz", "SOFT", "WONK"],
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Evora - Distributed Job Queue Documentation",
-  description: "Production-grade distributed job queue engine built on PostgreSQL FOR UPDATE SKIP LOCKED with Java Client SDK, CQRS Event Sourcing, and Visibility Timeouts.",
+  title: "Evora - Distributed Job Queue & Workload Fabric",
+  description: "-grade distributed job queue engine built on PostgreSQL FOR UPDATE SKIP LOCKED, Transactional Outbox, Event Sourcing, and CQRS.",
 };
 
 export default function RootLayout({
@@ -18,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${space.variable} ${mono.variable} bg-[#0a0a0c] text-[#f4f4f5] antialiased`}>
+      <body className={`${sans.variable} ${fraunces.variable} ${mono.variable} bg-[#09090b] text-[#f2ede4] font-sans antialiased selection:bg-[#c85a32]/25 selection:text-[#e8845e]`}>
         {children}
       </body>
     </html>

@@ -2,7 +2,7 @@
 /.next
 .env.local
 .env.development
-.env.production
+.env.
 .env.example
 .env
 .env.*

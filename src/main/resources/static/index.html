@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evora Distributed Task Queue & Operations Console</title>
-    <meta name="description" content="Production-grade distributed job queue engine built on Postgres FOR UPDATE SKIP LOCKED with CQRS, Event Sourcing, Visibility Timeouts, and Client SDK.">
+    <meta name="description"
+        content="-grade distributed job queue engine built on Postgres FOR UPDATE SKIP LOCKED with CQRS, Event Sourcing, Visibility Timeouts, and Client SDK.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body class="dark-theme">
     <div class="app-shell">
         <!-- Sidebar -->
@@ -26,18 +31,32 @@
             </div>
 
             <nav class="nav-links">
+                <div class="sidebar-heading">
+                    <span class="heading-badge">SEC-01</span>
+                    <span class="heading-label">OBSERVABILITY</span>
+                </div>
                 <button class="nav-item active" data-tab="tab-overview">
                     Overview & Telemetry
                 </button>
                 <button class="nav-item" data-tab="tab-queue">
                     Live Queue & Control
                 </button>
+
+                <div class="sidebar-heading" style="margin-top: 0.6rem;">
+                    <span class="heading-badge">SEC-02</span>
+                    <span class="heading-label">OPERATIONS & CHAOS</span>
+                </div>
                 <button class="nav-item" data-tab="tab-dlq">
                     DLQ Recovery Center
                 </button>
                 <button class="nav-item" data-tab="tab-chaos">
                     Resilience Simulator
                 </button>
+
+                <div class="sidebar-heading" style="margin-top: 0.6rem;">
+                    <span class="heading-badge">SEC-03</span>
+                    <span class="heading-label">INTEGRATIONS</span>
+                </div>
                 <button class="nav-item" data-tab="tab-integration">
                     Integration & SDK Hub
                 </button>
@@ -63,7 +82,7 @@
             <!-- Global Top Bar -->
             <header class="top-header">
                 <div class="header-titles">
-                    <p class="eyebrow" id="tab-eyebrow">Production Control Plane</p>
+                    <p class="eyebrow" id="tab-eyebrow"> Control Plane</p>
                     <h2 class="view-title" id="tab-title">Distributed Operations Console</h2>
                 </div>
                 <div class="header-actions">
@@ -79,7 +98,8 @@
             <!-- Banner Alerts -->
             <div id="idempotent-banner" class="banner banner-warning hidden">
                 <div>
-                    <strong>Idempotency Key Matched:</strong> This workload was previously submitted. Deduplication guard active, returning original job record.
+                    <strong>Idempotency Key Matched:</strong> This workload was previously submitted. Deduplication
+                    guard active, returning original job record.
                 </div>
             </div>
 
@@ -151,14 +171,18 @@
                             <h3>Workload Producer & Dispatcher</h3>
                             <span class="tag">Producer</span>
                         </div>
-                        <p class="section-desc">Submit new jobs with custom payloads, priority levels, and idempotency guarantees.</p>
+                        <p class="section-desc">Submit new jobs with custom payloads, priority levels, and idempotency
+                            guarantees.</p>
 
                         <div class="preset-group">
                             <label>Quick Presets:</label>
                             <div class="preset-buttons">
-                                <button type="button" class="btn btn-sm btn-secondary" id="preset-payment">Payment (P1)</button>
-                                <button type="button" class="btn btn-sm btn-secondary" id="preset-email">Order Email (P5)</button>
-                                <button type="button" class="btn btn-sm btn-secondary" id="preset-report">Nightly Report (P10)</button>
+                                <button type="button" class="btn btn-sm btn-secondary" id="preset-payment">Payment
+                                    (P1)</button>
+                                <button type="button" class="btn btn-sm btn-secondary" id="preset-email">Order Email
+                                    (P5)</button>
+                                <button type="button" class="btn btn-sm btn-secondary" id="preset-report">Nightly Report
+                                    (P10)</button>
                             </div>
                         </div>
 
@@ -181,14 +205,16 @@
 
                             <div class="form-field">
                                 <label for="payload">Payload (JSON)</label>
-                                <textarea id="payload" class="font-mono" rows="4">{"action": "process_order", "order_id": "ORD-9482", "amount": 149.99}</textarea>
+                                <textarea id="payload" class="font-mono"
+                                    rows="4">{"action": "process_order", "order_id": "ORD-9482", "amount": 149.99}</textarea>
                             </div>
 
                             <div class="form-field">
                                 <label for="idempotencyKey">Idempotency Key (Deduplication Guard)</label>
                                 <div class="input-action-group">
                                     <input type="text" id="idempotencyKey" class="font-mono">
-                                    <button type="button" id="btn-gen-key" class="btn btn-sm btn-secondary">New Key</button>
+                                    <button type="button" id="btn-gen-key" class="btn btn-sm btn-secondary">New
+                                        Key</button>
                                 </div>
                             </div>
 
@@ -205,13 +231,15 @@
                         <div class="form-field">
                             <label for="track-id">Job ID Lookup</label>
                             <div class="input-action-group">
-                                <input type="text" id="track-id" class="font-mono" placeholder="Paste job UUID to inspect timeline...">
+                                <input type="text" id="track-id" class="font-mono"
+                                    placeholder="Paste job UUID to inspect timeline...">
                                 <button id="track-btn" class="btn btn-secondary">Inspect</button>
                             </div>
                         </div>
 
                         <div id="track-result" class="timeline-box">
-                            <p class="text-muted">Enter a Job ID or click any row in the system table below to view event sourcing history.</p>
+                            <p class="text-muted">Enter a Job ID or click any row in the system table below to view
+                                event sourcing history.</p>
                         </div>
                     </article>
                 </div>
@@ -221,7 +249,8 @@
                     <div class="card-head">
                         <h3>System Jobs (PostgreSQL Write Store)</h3>
                         <div class="table-actions">
-                            <input type="text" id="job-search" placeholder="Search by ID or Queue..." class="search-input">
+                            <input type="text" id="job-search" placeholder="Search by ID or Queue..."
+                                class="search-input">
                             <select id="status-filter" class="filter-select">
                                 <option value="ALL">All Statuses</option>
                                 <option value="PENDING">PENDING</option>
@@ -263,7 +292,8 @@
                     <div class="card-head">
                         <div>
                             <h3>Dead Letter Queue (DLQ) Operational Recovery</h3>
-                            <p class="section-desc">Manage failed jobs that exceeded max attempt limits. Replay workloads or purge invalid records.</p>
+                            <p class="section-desc">Manage failed jobs that exceeded max attempt limits. Replay
+                                workloads or purge invalid records.</p>
                         </div>
                         <div class="btn-group">
                             <button id="dlq-retry-all" class="btn btn-success">
@@ -288,7 +318,8 @@
                             </thead>
                             <tbody id="dlq-body">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">No dead-lettered jobs found. System healthy!</td>
+                                    <td colspan="5" class="text-center text-muted">No dead-lettered jobs found. System
+                                        healthy!</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -303,22 +334,26 @@
                         <h3>Distributed System Chaos & Fault Injection</h3>
                         <span class="badge badge-danger">Resilience Test</span>
                     </div>
-                    <p class="section-desc">Test Evora's exact-once idempotency, visibility timeout sweeper, and DLQ escalation under simulated failure modes.</p>
+                    <p class="section-desc">Test Evora's exact-once idempotency, visibility timeout sweeper, and DLQ
+                        escalation under simulated failure modes.</p>
 
                     <div class="chaos-grid">
                         <div class="chaos-card">
                             <h4>Idempotency Guard Test</h4>
-                            <p>Submits identical workload twice using matching <code>idempotency_key</code>. Validates 200 OK duplicate rejection.</p>
+                            <p>Submits identical workload twice using matching <code>idempotency_key</code>. Validates
+                                200 OK duplicate rejection.</p>
                             <button class="btn btn-secondary" id="sim-dup">Run Idempotency Test</button>
                         </div>
                         <div class="chaos-card">
                             <h4>Worker Failure & DLQ Test</h4>
-                            <p>Forces worker to fail processing across max retries. Validates escalation into Dead Letter Queue (DLQ).</p>
+                            <p>Forces worker to fail processing across max retries. Validates escalation into Dead
+                                Letter Queue (DLQ).</p>
                             <button class="btn btn-danger-soft" id="sim-fail">Run Worker Crash Test</button>
                         </div>
                         <div class="chaos-card">
                             <h4>Visibility Timeout Test</h4>
-                            <p>Simulates hung/crashed worker node. Validates VisibilityTimeoutSweeper background lock recovery.</p>
+                            <p>Simulates hung/crashed worker node. Validates VisibilityTimeoutSweeper background lock
+                                recovery.</p>
                             <button class="btn btn-warning-soft" id="sim-slow">Run Lease Expiration Test</button>
                         </div>
                     </div>
@@ -335,9 +370,10 @@
                 <article class="surface-card">
                     <div class="card-head">
                         <h3>Developer Integration & Client SDK Hub</h3>
-                        <span class="tag tag-live">Production Ready</span>
+                        <span class="tag tag-live"> Ready</span>
                     </div>
-                    <p class="section-desc">Integrate Evora into external Java microservices, Spring Boot applications, or HTTP API clients with minimal code.</p>
+                    <p class="section-desc">Integrate Evora into external Java microservices, Spring Boot applications,
+                        or HTTP API clients with minimal code.</p>
 
                     <div class="snippet-tabs">
                         <button class="snippet-btn active" data-lang="java-sdk">Java Client SDK</button>
@@ -510,4 +546,5 @@ async function startWorker(workerId) {
 
     <script src="script.js"></script>
 </body>
+
 </html>

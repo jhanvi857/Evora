@@ -10,35 +10,39 @@ interface CalloutProps {
 export default function Callout({ type = "info", title, children }: CalloutProps) {
   const styles = {
     info: {
-      borderLeft: "border-l-orange-500",
-      icon: <Info className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />,
-      titleColor: "text-orange-400",
+      borderLeft: "border-l-brandAccent",
+      icon: <Info className="w-4 h-4 text-brandActiveCursor shrink-0 mt-0.5" />,
+      titleColor: "text-brandActiveCursor",
+      bg: "bg-[#141010]",
     },
     warning: {
-      borderLeft: "border-l-amber-500",
-      icon: <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />,
-      titleColor: "text-amber-400",
+      borderLeft: "border-l-stateWarning",
+      icon: <AlertTriangle className="w-4 h-4 text-stateWarning shrink-0 mt-0.5" />,
+      titleColor: "text-stateWarning",
+      bg: "bg-[#17130e]",
     },
     success: {
-      borderLeft: "border-l-emerald-500",
-      icon: <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />,
-      titleColor: "text-emerald-400",
+      borderLeft: "border-l-stateSuccess",
+      icon: <CheckCircle className="w-4 h-4 text-stateSuccess shrink-0 mt-0.5" />,
+      titleColor: "text-stateSuccess",
+      bg: "bg-[#0e1611]",
     },
     danger: {
-      borderLeft: "border-l-red-500",
-      icon: <Flame className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />,
-      titleColor: "text-red-400",
+      borderLeft: "border-l-stateDanger",
+      icon: <Flame className="w-4 h-4 text-stateDanger shrink-0 mt-0.5" />,
+      titleColor: "text-stateDanger",
+      bg: "bg-[#170e0e]",
     },
   };
 
   const s = styles[type];
 
   return (
-    <div className={`my-8 p-5 rounded-lg border-l-4 ${s.borderLeft} border border-[#27272a] bg-[#121215] flex gap-3 text-sm leading-relaxed`}>
+    <div className={`my-7 p-4 rounded border-l-3 ${s.borderLeft} border border-borderColor ${s.bg} flex gap-3 text-xs sm:text-sm leading-relaxed`}>
       {s.icon}
       <div className="space-y-1">
-        {title && <h5 className={`font-semibold ${s.titleColor} text-base`}>{title}</h5>}
-        <div className="text-zinc-300">{children}</div>
+        {title && <h5 className={`font-mono font-semibold ${s.titleColor} text-xs uppercase tracking-wide`}>{title}</h5>}
+        <div className="text-textMuted leading-relaxed">{children}</div>
       </div>
     </div>
   );
