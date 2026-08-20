@@ -6,7 +6,7 @@
 [![Outbox](https://img.shields.io/badge/Transactional%20Outbox-Zero%20Dual--Write-4ea674.svg?style=flat-square)]()
 [![License](https://img.shields.io/badge/License-MIT-332d2c.svg?style=flat-square)]()
 
-**Evora** is a high-throughput, -grade distributed workload fabric built directly on PostgreSQL row-level locking primitives (`FOR UPDATE SKIP LOCKED`). It eliminates the operational complexity and dual-write vulnerabilities of external message brokers (RabbitMQ, Redis BullMQ, AWS SQS) by co-locating background job coordination, transactional outbox relays, event-sourced aggregate logs, and choreographed sagas inside your ACID database.
+**Evora** is a high-throughput, production-grade distributed workload fabric built directly on PostgreSQL row-level locking primitives (`FOR UPDATE SKIP LOCKED`). It eliminates the operational complexity and dual-write vulnerabilities of external message brokers (RabbitMQ, Redis BullMQ, AWS SQS) by co-locating background job coordination, transactional outbox relays, event-sourced aggregate logs, and choreographed sagas inside your ACID database.
 
 ---
 

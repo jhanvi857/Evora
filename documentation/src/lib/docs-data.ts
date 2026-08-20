@@ -181,7 +181,7 @@ If the database commits, both the business row and the job exist. If the databas
 
 ## OutboxRelay Polling Engine
 
-The Java [OutboxRelay](file:///c:/Users/family/OneDrive/Desktop/Evora/src/main/java/com/evora/outbox/OutboxRelay.java) runs as a dedicated daemon thread scanning the outbox table:
+The Java \`OutboxRelay\` daemon thread scans the outbox table continuously:
 
 \`\`\`sql
 SELECT id, event_type, payload
@@ -213,7 +213,7 @@ Evora records all state transitions as an immutable, append-only stream of domai
 
 ## Append-Only Event Store Schema
 
-Evora's [PostgresEventStore](file:///c:/Users/family/OneDrive/Desktop/Evora/src/main/java/com/evora/store/PostgresEventStore.java) relies on the \`events\` table:
+Evora's \`PostgresEventStore\` engine records state in the \`events\` table:
 
 \`\`\`sql
 CREATE TABLE events (
@@ -230,12 +230,12 @@ CREATE TABLE events (
 
 ## Optimistic Concurrency Control
 
-When an aggregate (such as [JobAggregate](file:///c:/Users/family/OneDrive/Desktop/Evora/src/main/java/com/evora/domain/order/JobAggregate.java)) appends new events, it asserts the expected aggregate version. 
+When an aggregate (such as \`JobAggregate\`) appends new events, it asserts the expected aggregate version. 
 
 If two concurrent workers attempt to mutate the same aggregate simultaneously:
 1. The first worker inserts event at \`version = 4\`.
 2. The second worker also attempts to insert at \`version = 4\`.
-3. PostgreSQL enforces the unique constraint \`uq_events_aggregate_version\`, throwing an [OptimisticConcurrencyException](file:///c:/Users/family/OneDrive/Desktop/Evora/src/main/java/com/evora/eventstore/OptimisticConcurrencyException.java).
+3. PostgreSQL enforces the unique constraint \`uq_events_aggregate_version\`, throwing an \`OptimisticConcurrencyException\`.
 4. The second worker cleanly retries with rehydrated state.
 
 ## Snapshots & State Rehydration
@@ -279,7 +279,7 @@ Evora strictly segregates operational commands from analytical queries:
 
 ## MongoDB Projection Pipeline
 
-When domain events are published to the event bus, the [JobProjector](file:///c:/Users/family/OneDrive/Desktop/Evora/src/main/java/com/evora/projection/JobProjector.java) updates MongoDB collections asynchronously:
+When domain events are published to the event bus, the \`JobProjector\` updates MongoDB collections asynchronously:
 
 \`\`\`java
 public class JobProjector implements DomainEventSubscriber {
@@ -406,7 +406,7 @@ public class OrderService {
     title: "Spring Boot & Managed Worker Beans",
     category: "2. Integration Patterns",
     slug: "spring-boot",
-    description: " Spring Boot setup with configuration properties, thread pools, and graceful shutdown.",
+    description: "Declarative Spring Boot setup with configuration properties, thread pools, and graceful shutdown.",
     toc: [
       { id: "spring-configuration", text: "Spring Configuration Class", level: 2 },
       { id: "worker-bean-definition", text: "Managed EvoraWorker Bean", level: 2 },
@@ -575,7 +575,7 @@ When a background job spans multiple independent microservices, a failure in a d
 
 ## Three-Stage Workflow
 
-Evora's [JobExecutionSaga](file:///c:/Users/family/OneDrive/Desktop/Evora/src/main/java/com/evora/saga/JobExecutionSaga.java) coordinates a 3-step pipeline:
+Evora's \`JobExecutionSaga\` coordinator executes a 3-step pipeline:
 
 \`\`\`
 [JobSubmitted] ──> [1. ValidationService]
@@ -615,7 +615,7 @@ When a worker claims a job, Evora sets a visibility timeout (\`locked_until = NO
 
 ## Client SDK Heartbeat Extension
 
-While processing a long-running workload (e.g. video transcode), [EvoraWorker](file:///c:/Users/family/OneDrive/Desktop/Evora/src/main/java/com/evora/client/EvoraWorker.java) automatically sends background heartbeats every 15 seconds:
+While processing a long-running workload (e.g. video transcode), the \`EvoraWorker\` thread automatically sends background heartbeats every 15 seconds:
 
 \`\`\`sql
 UPDATE jobs
@@ -625,7 +625,7 @@ WHERE id = ? AND worker_id = ? AND status = 'RUNNING';
 
 ## VisibilityTimeoutSweeper Algorithm
 
-The [VisibilityTimeoutSweeper](file:///c:/Users/family/OneDrive/Desktop/Evora/src/main/java/com/evora/worker/VisibilityTimeoutSweeper.java) runs every 10 seconds:
+The \`VisibilityTimeoutSweeper\` daemon runs every 10 seconds:
 
 \`\`\`sql
 SELECT * FROM jobs

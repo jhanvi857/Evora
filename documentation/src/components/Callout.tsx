@@ -38,11 +38,11 @@ export default function Callout({ type = "info", title, children }: CalloutProps
   const s = styles[type];
 
   return (
-    <div className={`my-7 p-4 rounded border-l-3 ${s.borderLeft} border border-borderColor ${s.bg} flex gap-3 text-xs sm:text-sm leading-relaxed`}>
+    <div className={`my-8 p-5 rounded-lg border-l-4 ${s.borderLeft} border border-[#282322] ${s.bg} flex gap-4 text-xs sm:text-[14px] leading-[1.8] shadow-md`}>
       {s.icon}
-      <div className="space-y-1">
-        {title && <h5 className={`font-mono font-semibold ${s.titleColor} text-xs uppercase tracking-wide`}>{title}</h5>}
-        <div className="text-textMuted leading-relaxed">{children}</div>
+      <div className="space-y-1.5 flex-1">
+        {title && <h5 className={`font-mono font-bold ${s.titleColor} text-xs uppercase tracking-wide`}>{title}</h5>}
+        <div className="text-[#a89d96] leading-[1.8]">{children}</div>
       </div>
     </div>
   );

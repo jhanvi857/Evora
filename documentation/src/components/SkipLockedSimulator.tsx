@@ -258,7 +258,7 @@ export default function SkipLockedSimulator() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-brandActiveCursor font-semibold">
             <Cpu className="w-4 h-4 text-brandAccent" />
-            <span>POSTGRES_ENGINE // FOR UPDATE SKIP LOCKED MATRIX</span>
+            <span>POSTGRES_ENGINE — FOR UPDATE SKIP LOCKED MATRIX</span>
           </div>
           <span className="hidden sm:inline-block text-[#473b37]">|</span>
           <span className="hidden sm:inline-block text-textMuted">
