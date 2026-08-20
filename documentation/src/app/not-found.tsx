@@ -8,8 +8,8 @@ export default function NotFound() {
         <div className="w-10 h-10 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-brandActiveCursor mx-auto mb-4 font-mono">
           <Terminal className="w-5 h-5" />
         </div>
-        <div className="text-[11px] font-mono text-brandActiveCursor uppercase tracking-wider mb-2">
-          ERROR 404 // TUPLE_NOT_FOUND
+        <div className="text-[11px] font-mono text-brandActiveCursor uppercase tracking-wider mb-2 font-semibold">
+          ERROR 404 — TUPLE_NOT_FOUND
         </div>
         <h1 className="font-display text-2xl font-bold text-white mb-2">
           Topic Not in WAL Index

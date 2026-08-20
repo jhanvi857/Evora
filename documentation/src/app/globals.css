@@ -19,6 +19,7 @@ body {
   color: #f2ede4;
   font-family: var(--font-sans), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  line-height: 1.8;
   background-image: 
     radial-gradient(circle at 50% 0%, rgba(200, 90, 50, 0.05) 0%, transparent 65%),
     linear-gradient(to right, rgba(40, 35, 34, 0.4) 1px, transparent 1px),
@@ -49,61 +50,59 @@ code, pre, kbd, .font-mono {
   font-family: var(--font-mono), 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-/* MDX / Content styling */
+/* Base Prose Styles */
 .prose-evora h1 {
   font-family: var(--font-fraunces), 'Fraunces', Georgia, serif;
   font-size: 2.25rem;
   font-weight: 700;
   color: #ffffff;
-  margin-top: 2rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid #282322;
-  padding-bottom: 0.75rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1rem;
   letter-spacing: -0.02em;
 }
 
 .prose-evora h2 {
   font-family: var(--font-fraunces), 'Fraunces', Georgia, serif;
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.65rem;
+  font-weight: 700;
   color: #f5f1eb;
-  margin-top: 3.5rem;
-  margin-bottom: 1.25rem;
-  padding-top: 1rem;
+  margin-top: 4rem;
+  margin-bottom: 1.5rem;
+  padding-top: 2.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #282322;
   letter-spacing: -0.015em;
 }
 
 .prose-evora h3 {
   font-family: var(--font-sans), 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: #f2ede4;
-  margin-top: 2.25rem;
-  margin-bottom: 0.75rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
   letter-spacing: -0.01em;
 }
 
 .prose-evora p {
   color: #a89d96;
-  font-size: 0.95rem;
-  line-height: 1.8;
-  margin-bottom: 1.5rem;
+  font-size: 0.96rem;
+  line-height: 1.9;
+  margin-bottom: 1.75rem;
 }
 
 .prose-evora ul {
   list-style-type: square;
   padding-left: 1.5rem;
-  margin-top: 1.25rem;
-  margin-bottom: 1.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
   color: #a89d96;
   font-size: 0.95rem;
-  line-height: 1.8;
+  line-height: 1.85;
 }
 
 .prose-evora li {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .prose-evora code:not(pre code) {
@@ -112,7 +111,7 @@ code, pre, kbd, .font-mono {
   color: #e8845e;
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
   font-size: 0.85em;
-  padding: 0.15rem 0.45rem;
+  padding: 0.2rem 0.45rem;
   border-radius: 3px;
   font-weight: 500;
 }

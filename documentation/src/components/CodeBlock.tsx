@@ -108,15 +108,15 @@ export default function CodeBlock({ code, language = "java", filename }: CodeBlo
   };
 
   return (
-    <div className="my-5 rounded-lg border border-borderColor bg-[#060607] overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between px-4 py-2 bg-[#121010] border-b border-borderColor text-xs font-mono">
+    <div className="my-8 rounded-lg border border-[#282322] bg-[#060607] overflow-hidden shadow-lg">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[#121010] border-b border-[#282322] text-xs font-mono">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-brandAccent/70"></span>
+          <span className="w-2 h-2 rounded-full bg-brandAccent/80"></span>
           <span className="text-brandActiveCursor font-semibold">{filename || language}</span>
         </div>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 hover:text-textMain transition px-2 py-0.8 rounded bg-[#1c1817] border border-borderColor text-xs text-textMuted"
+          className="flex items-center gap-1.5 hover:text-textMain transition px-2.5 py-1 rounded bg-[#1c1817] border border-[#282322] text-xs text-[#a89d96]"
         >
           {copied ? (
             <>
@@ -131,7 +131,7 @@ export default function CodeBlock({ code, language = "java", filename }: CodeBlo
           )}
         </button>
       </div>
-      <pre className="p-4 sm:p-5 text-xs sm:text-[13px] font-mono text-textMain overflow-x-auto leading-relaxed sm:leading-6 bg-[#060607]">
+      <pre className="p-5 sm:p-6 text-xs sm:text-[13.5px] font-mono text-[#f2ede4] overflow-x-auto leading-[1.75] bg-[#060607]">
         <code>{highlightCode(code)}</code>
       </pre>
     </div>

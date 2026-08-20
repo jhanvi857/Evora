@@ -18,30 +18,30 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 text-center">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
           {/* Top Engine Status Monospace Banner */}
-          <div className="inline-flex items-center gap-2 bg-[#141214] border border-borderColor px-3.5 py-1.5 rounded text-[11px] font-mono text-textMuted mb-8 shadow-sm">
+          <div className="inline-flex items-center gap-2 bg-[#141214] border border-borderColor px-4 py-2 rounded text-[11px] font-mono text-textMuted mb-10 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-stateSuccess"></span>
             <span>WAL_EPOCH: 0x4F</span>
             <span className="text-[#3d3330]">|</span>
-            <span className="text-brandActiveCursor font-medium">FOR UPDATE SKIP LOCKED</span>
+            <span className="text-brandActiveCursor font-semibold">FOR UPDATE SKIP LOCKED</span>
             <span className="text-[#3d3330]">|</span>
             <span>POSTGRESQL 15+ NATIVE</span>
           </div>
 
-          <h1 className="font-display text-4xl sm:text-6xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-[1.15]">
+          <h1 className="font-display text-4xl sm:text-6xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-[1.2]">
             The Lock-Free Workload Fabric for PostgreSQL.
           </h1>
 
-          <p className="mt-6 text-base sm:text-lg text-textMuted max-w-2xl mx-auto font-sans leading-relaxed">
+          <p className="mt-8 text-base sm:text-lg text-[#a89d96] max-w-2xl mx-auto font-sans leading-[1.85]">
             Eliminate Redis and RabbitMQ operational overhead. Execute atomic, non-blocking queue polling, transactional outbox relays, and choreographed sagas inside your existing database.
           </p>
 
           {/* CTA Buttons */}
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 font-mono text-xs">
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 font-mono text-xs">
             <Link
               href="/docs"
-              className="w-full sm:w-auto bg-brandAccent hover:bg-brandAccentHover text-white font-bold px-6 py-3 rounded flex items-center justify-center gap-2 transition shadow-md"
+              className="w-full sm:w-auto bg-brandAccent hover:bg-brandAccentHover text-white font-bold px-6 py-3.5 rounded flex items-center justify-center gap-2 transition shadow-md"
             >
               <span>EXPLORE ARCHITECTURE</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -51,7 +51,7 @@ export default function LandingPage() {
               href="http://localhost:8080"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto bg-[#141214] border border-borderColor hover:border-brandAccent text-textMain font-semibold px-6 py-3 rounded flex items-center justify-center gap-2 transition"
+              className="w-full sm:w-auto bg-[#141214] border border-borderColor hover:border-brandAccent text-textMain font-semibold px-6 py-3.5 rounded flex items-center justify-center gap-2 transition"
             >
               <Terminal className="w-3.5 h-3.5 text-stateSuccess" />
               <span>LAUNCH OPERATIONS CONSOLE</span>
@@ -59,77 +59,77 @@ export default function LandingPage() {
           </div>
 
           {/* Signature Interactive Centerpiece: SKIP LOCKED Simulator */}
-          <div className="mt-14 max-w-4xl mx-auto text-left">
-            <div className="mb-3 flex items-center justify-between text-xs font-mono text-textMuted">
-              <span className="flex items-center gap-1.5">
+          <div className="mt-16 max-w-4xl mx-auto text-left">
+            <div className="mb-4 flex items-center justify-between text-xs font-mono text-textMuted">
+              <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-brandAccent animate-pulse"></span>
-                <span>SIGNATURE ENGINE SIMULATOR</span>
+                <span className="text-[#f2ede4] font-semibold">SIGNATURE ENGINE SIMULATOR</span>
               </span>
-              <span>INTERACTIVE // CLICK ACTION BUTTONS BELOW</span>
+              <span className="text-[11px] text-[#8f837c]">INTERACTIVE — REAL-TIME CONCURRENCY SIMULATOR</span>
             </div>
             <SkipLockedSimulator />
           </div>
         </section>
 
         {/* 4 Core Distributed Architecture Pillars */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-borderColor">
-          <div className="text-center mb-12">
-            <div className="text-[11px] font-mono uppercase text-brandActiveCursor font-semibold tracking-wider">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-borderColor">
+          <div className="text-center mb-14">
+            <div className="text-[11.5px] font-mono uppercase text-brandActiveCursor font-bold tracking-wider mb-2">
               CORE SYSTEM CAPABILITIES
             </div>
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-white mt-1">
               Built on Database Internals & Immutable Logs
             </h2>
-            <p className="text-textMuted text-xs sm:text-sm mt-2 max-w-xl mx-auto">
+            <p className="text-[#a89d96] text-sm sm:text-base mt-3 max-w-xl mx-auto leading-relaxed">
               Everything required for multi-tenant distributed execution without distributed dual-write hazards.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="bg-[#121010] border border-borderColor p-5 rounded">
-              <div className="w-8 h-8 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-brandActiveCursor mb-3 font-mono">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-[#121010] border border-borderColor p-6 rounded-lg shadow-sm">
+              <div className="w-9 h-9 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-brandActiveCursor mb-4 font-mono">
                 <Zap className="w-4 h-4" />
               </div>
-              <h3 className="font-display font-semibold text-base text-white mb-1.5">
+              <h3 className="font-display font-semibold text-base text-white mb-2">
                 SKIP LOCKED
               </h3>
-              <p className="text-textMuted text-xs leading-relaxed">
+              <p className="text-[#a89d96] text-xs leading-[1.8]">
                 Non-blocking concurrent tuple reservations across 100+ worker threads with zero lock serialization.
               </p>
             </div>
 
-            <div className="bg-[#121010] border border-borderColor p-5 rounded">
-              <div className="w-8 h-8 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-stateSuccess mb-3 font-mono">
+            <div className="bg-[#121010] border border-borderColor p-6 rounded-lg shadow-sm">
+              <div className="w-9 h-9 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-stateSuccess mb-4 font-mono">
                 <Database className="w-4 h-4" />
               </div>
-              <h3 className="font-display font-semibold text-base text-white mb-1.5">
+              <h3 className="font-display font-semibold text-base text-white mb-2">
                 Transactional Outbox
               </h3>
-              <p className="text-textMuted text-xs leading-relaxed">
+              <p className="text-[#a89d96] text-xs leading-[1.8]">
                 Enqueue tasks in the exact same SQL transaction as your business records. 100% dual-write proof.
               </p>
             </div>
 
-            <div className="bg-[#121010] border border-borderColor p-5 rounded">
-              <div className="w-8 h-8 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-[#e29377] mb-3 font-mono">
+            <div className="bg-[#121010] border border-borderColor p-6 rounded-lg shadow-sm">
+              <div className="w-9 h-9 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-[#e29377] mb-4 font-mono">
                 <Layers className="w-4 h-4" />
               </div>
-              <h3 className="font-display font-semibold text-base text-white mb-1.5">
+              <h3 className="font-display font-semibold text-base text-white mb-2">
                 CQRS Projections
               </h3>
-              <p className="text-textMuted text-xs leading-relaxed">
+              <p className="text-[#a89d96] text-xs leading-[1.8]">
                 PostgreSQL write engine decoupled from MongoDB read telemetry models for zero-contention dashboards.
               </p>
             </div>
 
-            <div className="bg-[#121010] border border-borderColor p-5 rounded">
-              <div className="w-8 h-8 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-stateWarning mb-3 font-mono">
+            <div className="bg-[#121010] border border-borderColor p-6 rounded-lg shadow-sm">
+              <div className="w-9 h-9 bg-[#1c1817] border border-borderColor rounded flex items-center justify-center text-stateWarning mb-4 font-mono">
                 <GitFork className="w-4 h-4" />
               </div>
-              <h3 className="font-display font-semibold text-base text-white mb-1.5">
+              <h3 className="font-display font-semibold text-base text-white mb-2">
                 Choreographed Sagas
               </h3>
-              <p className="text-textMuted text-xs leading-relaxed">
+              <p className="text-[#a89d96] text-xs leading-[1.8]">
                 Multi-step distributed transactions with automated reverse compensating rollbacks upon step failure.
               </p>
             </div>
@@ -137,13 +137,13 @@ export default function LandingPage() {
         </section>
 
         {/* Quickstart Terminal Section */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-borderColor">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-borderColor">
           <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="font-display text-2xl font-bold text-white">
-                5-Minute  Quickstart
+            <div className="text-center mb-10">
+              <h2 className="font-display text-2xl sm:text-3xl font-bold text-white">
+                5-Minute Production Quickstart
               </h2>
-              <p className="text-textMuted text-xs mt-1">
+              <p className="text-[#a89d96] text-sm mt-2 leading-relaxed">
                 Launch the PostgreSQL/MongoDB cluster and run the multi-threaded Java Client SDK demo.
               </p>
             </div>
@@ -165,12 +165,12 @@ mvn exec:java -Dexec.mainClass="com.evora.demo.EvoraWorkerDemo"`}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-borderColor py-8 bg-[#070607] text-xs font-mono text-textMuted">
+      <footer className="border-t border-borderColor py-10 bg-[#070607] text-xs font-mono text-[#8f837c]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <span>EVORA WORKLOAD FABRIC // POSTGRESQL FOR UPDATE SKIP LOCKED</span>
+            <span>EVORA WORKLOAD FABRIC — POSTGRESQL FOR UPDATE SKIP LOCKED</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <Link href="/docs" className="hover:text-brandActiveCursor transition">
               Documentation
             </Link>
