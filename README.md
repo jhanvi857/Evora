@@ -225,8 +225,6 @@ Open **`http://localhost:8080`** in your browser to view the Single-Page Control
 | **Choreographed Sagas** | **Built-in Compensations** | None | None | Step Functions ($$$) |
 | **Event Sourcing Audit** | **Append-Only Store** | None (Ephemeral) | None (Ephemeral) | None |
 
----
-
 ## License
 
 Evora is open-source software licensed under the [MIT License](LICENSE).
